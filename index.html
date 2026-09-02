@@ -3,17 +3,18 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>สรุปสถานะงาน DEV 5 ระบบ</title>
+    <title>สรุปสถานะงาน DEV และเอกสาร</title>
     <meta
       name="description"
-      content="Dashboard สรุปสถานะงาน DEV แยกตามระบบ DMS, องค์กรนายจ้าง, LCS, e-payslf และลงพื้นที่"
+      content="Dashboard สรุปสถานะงาน DEV และงานเอกสาร แยกตามระบบ DMS, องค์กรนายจ้าง, LCS, e-payslf และลงพื้นที่"
     />
+    <link rel="icon" href="data:," />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <header class="hero">
       <nav class="topbar" aria-label="ภาพรวมระบบ">
-        <span class="brand">DEV Process</span>
+        <span class="brand">Project Progress</span>
         <div class="topbar-actions">
           <span class="updated">ข้อมูลล่าสุด 7 ส.ค. 2026</span>
           <a
@@ -27,75 +28,157 @@
 
       <section class="hero-grid">
         <div class="hero-copy">
-          <p class="eyebrow">Google Sheets: หน้าจอ Dev</p>
-          <h1>สรุปสถานะงาน 5 ระบบ</h1>
-          <p class="subtitle">
-            เกณฑ์การนับ: <strong>Tested</strong> และ <strong>Developed</strong> คือจำนวนงานที่แก้ไขแล้ว
-            ส่วนสถานะอื่นทั้งหมดนับเป็นงานติดปัญหา/ยังไม่จบ
+          <p class="eyebrow">PM Progress Brief</p>
+          <h1>ภาพรวมงานที่ต้องตามวันนี้</h1>
+          <p class="subtitle" id="heroSubtitle">
+            ติดตามงาน Dev 5 ระบบ และงานเอกสารส่งเซ็นหน้าจอจาก Google Sheet เดียวกัน
           </p>
+          <div class="hero-snapshot" aria-label="สรุปย่อสำหรับ PM">
+            <article>
+              <span>DEV เสร็จแล้ว</span>
+              <strong id="heroDevDone">0/0</strong>
+              <small id="heroDevPercent">0% ภาพรวม DEV</small>
+            </article>
+            <article>
+              <span>เซ็นหน้าจอ</span>
+              <strong id="heroScreenSign">0/0</strong>
+              <small>กองเอกสารเซ็นหน้าจอ</small>
+            </article>
+            <article>
+              <span>เอกสารส่งงาน</span>
+              <strong id="heroDeliveryDocs">0/0</strong>
+              <small id="heroDeliveryPercent">0% ส่ง/เซ็นแล้ว</small>
+            </article>
+          </div>
         </div>
-        <div class="hero-meter" aria-label="เปอร์เซ็นต์งานที่แก้ไขแล้วทั้งหมด">
+        <div class="hero-meter" aria-label="สถานะรวมมุมมองปัจจุบัน">
           <div class="donut" id="overallDonut">
             <span id="overallPercent">0%</span>
             <small>แก้ไขแล้ว</small>
+          </div>
+          <div class="priority-card">
+            <span>ควรตามก่อน</span>
+            <strong id="heroFocusLabel">กำลังโหลดข้อมูล</strong>
+            <small id="heroFocusDetail">อ่านสถานะล่าสุดจาก Google Sheet</small>
           </div>
         </div>
       </section>
     </header>
 
     <main>
-      <section class="metrics" aria-label="ตัวเลขภาพรวม">
-        <article class="metric-card">
-          <span class="metric-label">งานที่ต้องแก้ทั้งหมด</span>
-          <strong id="totalJobs">0</strong>
-          <small>รวมทุกระบบ</small>
-        </article>
-        <article class="metric-card is-done">
-          <span class="metric-label">จำนวนงานที่แก้ไขแล้ว</span>
-          <strong id="doneJobs">0/0</strong>
-          <small id="doneRatio">0% ของงานทั้งหมด</small>
-        </article>
-        <article class="metric-card is-problem">
-          <span class="metric-label">จำนวนงานที่ติดปัญหา</span>
-          <strong id="problemJobs">0/0</strong>
-          <small id="problemRatio">0% ของงานทั้งหมด</small>
-        </article>
+      <section class="view-tabs" id="viewTabs" aria-label="เลือกมุมมองสรุป">
+        <button type="button" class="is-active" data-view="dev">งาน DEV</button>
+        <button type="button" data-view="documents">เอกสาร</button>
       </section>
 
-      <section class="panel overview-panel" aria-labelledby="overviewTitle">
-        <div class="section-head">
-          <div>
-            <p class="eyebrow">Overview</p>
-            <h2 id="overviewTitle">ภาพรวมรายระบบ</h2>
+      <div class="dashboard-view is-active" id="devView" data-view-panel="dev">
+        <section class="metrics" aria-label="ตัวเลขภาพรวมงาน Dev">
+          <article class="metric-card">
+            <span class="metric-label">งานที่ต้องแก้ทั้งหมด</span>
+            <strong id="totalJobs">0</strong>
+            <small>รวมทุกระบบ</small>
+          </article>
+          <article class="metric-card is-done">
+            <span class="metric-label">จำนวนงานที่แก้ไขแล้ว</span>
+            <strong id="doneJobs">0/0</strong>
+            <small id="doneRatio">0% ของงานทั้งหมด</small>
+          </article>
+          <article class="metric-card is-problem">
+            <span class="metric-label">จำนวนงานที่ติดปัญหา</span>
+            <strong id="problemJobs">0/0</strong>
+            <small id="problemRatio">0% ของงานทั้งหมด</small>
+          </article>
+        </section>
+
+        <section class="panel overview-panel" aria-labelledby="overviewTitle">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">Overview</p>
+              <h2 id="overviewTitle">ภาพรวมรายระบบ</h2>
+            </div>
+            <div class="legend" aria-label="คำอธิบายสี">
+              <span><i class="swatch done"></i>แก้ไขแล้ว</span>
+              <span><i class="swatch problem"></i>ติดปัญหา</span>
+            </div>
           </div>
-          <div class="legend" aria-label="คำอธิบายสี">
-            <span><i class="swatch done"></i>แก้ไขแล้ว</span>
-            <span><i class="swatch problem"></i>ติดปัญหา</span>
+
+          <div class="project-tabs" id="projectTabs" aria-label="เลือกโปรเจค"></div>
+          <div class="project-table" id="projectRows"></div>
+        </section>
+
+        <section class="focus-strip" aria-label="จุดที่ควรโฟกัส">
+          <strong>โฟกัสหลัก</strong>
+          <span>LCS 8097 เหลืองานติดปัญหามากสุด 14/19 ตามด้วย องค์กรนายจ้าง 11/24 และ DMS 9/16</span>
+        </section>
+
+        <section class="details" aria-labelledby="detailsTitle">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">Project Detail</p>
+              <h2 id="detailsTitle">รายละเอียดแยกแต่ละโปรเจค</h2>
+            </div>
           </div>
-        </div>
+          <div class="detail-grid" id="detailGrid"></div>
+        </section>
+      </div>
 
-        <div class="project-tabs" id="projectTabs" aria-label="เลือกโปรเจค"></div>
-        <div class="project-table" id="projectRows"></div>
-      </section>
+      <div class="dashboard-view" id="documentView" data-view-panel="documents" hidden>
+        <section class="metrics" aria-label="ตัวเลขภาพรวมงานเอกสาร">
+          <article class="metric-card is-document">
+            <span class="metric-label">เอกสารทั้งหมด</span>
+            <strong id="docTotalItems">0</strong>
+            <small id="docSystemCount">0 ระบบต่อเอกสาร</small>
+          </article>
+          <article class="metric-card is-done">
+            <span class="metric-label">ส่ง/เซ็นแล้ว</span>
+            <strong id="docReadyItems">0/0</strong>
+            <small id="docReadyRatio">0% ของสถานะเอกสาร</small>
+          </article>
+          <article class="metric-card is-problem">
+            <span class="metric-label">ยังต้องติดตาม</span>
+            <strong id="docFollowItems">0/0</strong>
+            <small id="docFollowRatio">0% ของสถานะเอกสาร</small>
+          </article>
+        </section>
 
-      <section class="focus-strip" aria-label="จุดที่ควรโฟกัส">
-        <strong>โฟกัสหลัก</strong>
-        <span>LCS 8097 เหลืองานติดปัญหามากสุด 14/19 ตามด้วย องค์กรนายจ้าง 11/24 และ DMS 9/16</span>
-      </section>
-
-      <section class="details" aria-labelledby="detailsTitle">
-        <div class="section-head">
-          <div>
-            <p class="eyebrow">Project Detail</p>
-            <h2 id="detailsTitle">รายละเอียดแยกแต่ละโปรเจค</h2>
+        <section class="panel document-panel" aria-labelledby="documentTitle">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">Document Overview</p>
+              <h2 id="documentTitle">ภาพรวมกองงานเอกสาร</h2>
+            </div>
+            <div class="legend document-legend" aria-label="คำอธิบายสถานะเอกสาร">
+              <span><i class="swatch signed"></i>เซ็นแล้ว</span>
+              <span><i class="swatch sent"></i>ส่งแล้ว</span>
+              <span><i class="swatch review"></i>รอตรวจ/จัดทำ</span>
+              <span><i class="swatch empty"></i>ยังไม่ระบุ</span>
+            </div>
           </div>
-        </div>
-        <div class="detail-grid" id="detailGrid"></div>
-      </section>
+
+          <div class="document-workstream-strip" id="documentWorkstreamStrip" aria-label="สรุปแยกกองงานเอกสาร"></div>
+          <div class="document-status-strip" id="documentStatusStrip" aria-label="จำนวนแยกตามสถานะ"></div>
+          <div class="project-table" id="documentRows"></div>
+        </section>
+
+        <section class="focus-strip document-focus" aria-label="จุดที่ควรโฟกัสด้านเอกสาร">
+          <strong>โฟกัสเอกสาร</strong>
+          <span id="documentFocusText">กำลังอ่านสถานะเอกสารจาก Google Sheet</span>
+        </section>
+
+        <section class="details" aria-labelledby="documentDetailsTitle">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">Document Detail</p>
+              <h2 id="documentDetailsTitle">รายละเอียดเอกสารแยกตามกองงาน</h2>
+            </div>
+          </div>
+          <div class="document-detail-grid" id="documentDetailGrid"></div>
+        </section>
+      </div>
     </main>
 
     <footer>
-      <p>หมายเหตุ: แท็บลงพื้นที่ 8099 นับ To Do เป็นติดปัญหาทั้งหมดตามกติกาที่กำหนด</p>
+      <p>หมายเหตุ: งาน Dev นับ Tested และ Developed เป็นแก้ไขแล้ว ส่วนงานเอกสารแสดงช่องว่างเป็น “ยังไม่ระบุ”</p>
     </footer>
 
     <script src="script.js"></script>
