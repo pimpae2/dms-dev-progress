@@ -59,6 +59,13 @@ const documentWorkstreamConfig = [
   },
 ];
 
+const developerRankProfiles = [
+  { title: "สายปิดงานไว", accent: "#f28a20" },
+  { title: "สายเก็บแต้ม", accent: "#2f73b7" },
+  { title: "สายส่งงานเนียน", accent: "#20aa76" },
+];
+const DEVELOPER_RANKING_COLLAPSED_KEY = "developerRankingCollapsed";
+
 let activeView = "dev";
 let projects = [];
 let documentSummary = createEmptyDocumentSummary();
@@ -146,6 +153,13 @@ function safeDriveUrl(value) {
   }
 }
 
+function splitDevelopers(value) {
+  return String(value || "")
+    .split(/\r?\n|[,;/&+]|(?:\s+และ\s+)/u)
+    .map((name) => name.replace(/^[-–•]\s*/, "").replace(/\s+/g, " ").trim())
+    .filter(Boolean);
+}
+
 function normalizeDocumentStatus(value) {
   const status = String(value || "").trim();
   return status || DOCUMENT_EMPTY_STATUS;
@@ -197,6 +211,7 @@ async function loadProject(config) {
   const headers = rows.shift().map((header) => header.trim());
   const titleIndex = headers.indexOf("หน้าจอ/เมนู/หัวข้อ");
   const statusIndex = headers.indexOf("สถานะ");
+  const developerIndex = headers.findIndex((header) => header.toLowerCase() === "dev");
   if (titleIndex < 0 || statusIndex < 0) throw new Error(`ไม่พบคอลัมน์สถานะในแท็บ ${config.name}`);
 
   const items = rows
@@ -204,6 +219,7 @@ async function loadProject(config) {
     .map((row) => ({
       title: row[titleIndex].trim(),
       status: (row[statusIndex] && row[statusIndex].trim()) || "ไม่ระบุ",
+      developers: developerIndex >= 0 ? splitDevelopers(row[developerIndex]) : [],
     }));
 
   const statusCounts = countBy(items, (item) => item.status);
@@ -212,6 +228,7 @@ async function loadProject(config) {
     ...config,
     total: items.length,
     done: items.filter((item) => DONE_STATUSES.has(item.status)).length,
+    items,
     status: Object.entries(statusCounts)
       .sort(([a], [b]) => Number(DONE_STATUSES.has(b)) - Number(DONE_STATUSES.has(a)) || a.localeCompare(b, "th"))
       .map(([name, count]) => [name, count, DONE_STATUSES.has(name)]),
@@ -303,6 +320,91 @@ const documentReadyPercent = () => fmtPercent(documentSummary.ready, documentSum
 function setText(id, text) {
   const element = document.getElementById(id);
   if (element) element.textContent = text;
+}
+
+function saveDeveloperRankingCollapsed(collapsed) {
+  try {
+    localStorage.setItem(DEVELOPER_RANKING_COLLAPSED_KEY, collapsed ? "true" : "false");
+  } catch {
+    // Local storage may be unavailable in private or restricted browser modes.
+  }
+}
+
+function setDeveloperRankingCollapsed(collapsed) {
+  const widget = document.getElementById("developerRankingWidget");
+  const toggle = document.getElementById("developerRankingToggle");
+  if (!widget || !toggle) return;
+
+  const label = collapsed ? "แสดง Ranking DEV" : "ซ่อน Ranking DEV";
+  widget.classList.toggle("is-collapsed", collapsed);
+  toggle.setAttribute("aria-expanded", String(!collapsed));
+  toggle.setAttribute("aria-label", label);
+  const srLabel = toggle.querySelector(".sr-only");
+  if (srLabel) srLabel.textContent = label;
+  saveDeveloperRankingCollapsed(collapsed);
+}
+
+function initDeveloperRankingToggle() {
+  const widget = document.getElementById("developerRankingWidget");
+  const toggle = document.getElementById("developerRankingToggle");
+  if (!widget || !toggle) return;
+
+  let collapsed = false;
+  try {
+    collapsed = localStorage.getItem(DEVELOPER_RANKING_COLLAPSED_KEY) === "true";
+  } catch {
+    collapsed = false;
+  }
+
+  setDeveloperRankingCollapsed(collapsed);
+  toggle.addEventListener("click", () => {
+    setDeveloperRankingCollapsed(!widget.classList.contains("is-collapsed"));
+  });
+}
+
+function getDeveloperInitials(name) {
+  return [...String(name || "").replace(/\s+/g, "")].slice(0, 2).join("") || "DEV";
+}
+
+function summarizeDeveloperRanking() {
+  const stats = new Map();
+  let totalRows = 0;
+  let namedRows = 0;
+
+  projects.forEach((project) => {
+    project.items.forEach((item) => {
+      totalRows += 1;
+
+      if (!item.developers.length) return;
+      namedRows += 1;
+
+      item.developers.forEach((developer) => {
+        const current = stats.get(developer) || {
+          name: developer,
+          total: 0,
+          done: 0,
+          problem: 0,
+          systems: {},
+        };
+        const isDone = DONE_STATUSES.has(item.status);
+
+        current.total += 1;
+        current.done += isDone ? 1 : 0;
+        current.problem += isDone ? 0 : 1;
+        current.systems[project.name] = (current.systems[project.name] || 0) + 1;
+        stats.set(developer, current);
+      });
+    });
+  });
+
+  return {
+    totalRows,
+    namedRows,
+    missingRows: totalRows - namedRows,
+    ranking: [...stats.values()].sort((a, b) =>
+      b.done - a.done || b.total - a.total || a.name.localeCompare(b.name, "th"),
+    ),
+  };
 }
 
 function getWorkstreamSummary(id) {
@@ -425,6 +527,52 @@ function renderRows() {
         <span style="width:${donePercent}%"></span><span style="width:${100 - donePercent}%"></span>
       </div>
       <div class="row-counts"><span class="done-count">${project.done}/${project.total}</span><span class="problem-count">${problem}/${project.total}</span><span class="percent">${donePercent}%</span></div>
+    </article>`;
+  }).join("");
+}
+
+function renderDeveloperPodium() {
+  const podium = document.getElementById("developerPodium");
+  const note = document.getElementById("developerRankingNote");
+  if (!podium || !note) return;
+
+  const summary = summarizeDeveloperRanking();
+  note.textContent = summary.totalRows
+    ? `นับชื่อ ${summary.namedRows}/${summary.totalRows} แถว | ว่าง ${summary.missingRows}`
+    : "ยังไม่พบข้อมูลงาน DEV";
+
+  if (!summary.ranking.length) {
+    podium.innerHTML = `<p class="podium-empty">ยังไม่มีชื่อ DEV ให้จัดอันดับในชีต</p>`;
+    return;
+  }
+
+  podium.innerHTML = summary.ranking.slice(0, 3).map((developer, index) => {
+    const rank = index + 1;
+    const profile = developerRankProfiles[index];
+    const topSystem = Object.entries(developer.systems)
+      .sort(([, a], [, b]) => b - a)[0];
+    const systemLabel = topSystem ? `${topSystem[0]} ${topSystem[1]} งาน` : "ยังไม่พบระบบหลัก";
+
+    return `<article class="podium-place is-rank-${rank}" style="--rank-accent:${profile.accent}">
+      <div class="developer-character" aria-hidden="true">
+        <span class="developer-medal">${rank}</span>
+        <span class="developer-head">${escapeHtml(getDeveloperInitials(developer.name))}</span>
+        <span class="developer-body"></span>
+      </div>
+      <div class="podium-copy">
+        <span>ที่ ${rank}</span>
+        <h3>${escapeHtml(developer.name)}</h3>
+        <p>${escapeHtml(profile.title)}</p>
+      </div>
+      <div class="podium-score">
+        <strong>${developer.done}</strong>
+        <span>งาน</span>
+      </div>
+      <div class="podium-base">
+        <strong>${developer.done}/${developer.total}</strong>
+        <span>ค้าง ${developer.problem}</span>
+        <small>${escapeHtml(systemLabel)}</small>
+      </div>
     </article>`;
   }).join("");
 }
@@ -637,6 +785,8 @@ function renderDevError(error) {
     document.getElementById("projectRows").innerHTML =
       `<p role="alert">${escapeHtml(error.message)} - กรุณาตรวจสอบว่าสิทธิ์ของชีตเป็น “ทุกคนที่มีลิงก์ดูได้”</p>`;
     document.getElementById("detailGrid").innerHTML = "";
+    document.getElementById("developerPodium").innerHTML = "";
+    document.getElementById("developerRankingNote").textContent = "อัปเดตอันดับ DEV ไม่สำเร็จ";
   }
 }
 
@@ -653,6 +803,7 @@ async function refreshDashboard() {
     setOverallNumbers();
     renderTabs();
     renderRows();
+    renderDeveloperPodium();
     renderDetails();
     renderFocus();
   } else {
@@ -674,5 +825,6 @@ async function refreshDashboard() {
 }
 
 initViewTabs();
+initDeveloperRankingToggle();
 refreshDashboard();
 setInterval(refreshDashboard, REFRESH_INTERVAL_MS);
