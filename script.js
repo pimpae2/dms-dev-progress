@@ -15,11 +15,13 @@ const projectConfig = [
 ];
 
 const sheetLinks = {
+  plan: `https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit?gid=1021126458#gid=1021126458`,
   dev: `https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit?gid=${DEV_SHEET_GID}#gid=${DEV_SHEET_GID}`,
   documents: `https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit?gid=${DOCUMENT_SHEET_GID}#gid=${DOCUMENT_SHEET_GID}`,
 };
 
 const heroSubtitles = {
+  plan: "Project Plan_ORG · องค์กรนายจ้าง, ePaySLF และลงพื้นที่ · นับเฉพาะข้อที่มีสถานะ โดย Developed และ Tested ถือว่าพัฒนาแล้ว",
   dev: "เกณฑ์การนับ: <strong>Tested</strong> และ <strong>Developed</strong> คือจำนวนงานที่แก้ไขแล้ว ส่วนสถานะอื่นทั้งหมดนับเป็นงานติดปัญหา/ยังไม่จบ",
   documents: "งานเอกสารอ่านจากแท็บเอกสารส่งเซ็นหน้าจอ โดยแสดงสถานะของแต่ละระบบแยกตามตัวงาน",
 };
@@ -417,6 +419,10 @@ function getWorkstreamSummary(id) {
 }
 
 function syncPmBrief() {
+  if (activeView === "plan") {
+    syncPlanBrief();
+    return;
+  }
   const totalJobs = projects.reduce((sum, project) => sum + project.total, 0);
   const doneJobs = projects.reduce((sum, project) => sum + project.done, 0);
   const devDonePercent = fmtPercent(doneJobs, totalJobs);
@@ -448,15 +454,15 @@ function syncPmBrief() {
 }
 
 function syncHeroMeter() {
-  const percent = activeView === "documents" ? documentReadyPercent() : devPercent();
-  const label = activeView === "documents" ? "ส่ง/เซ็นแล้ว" : "แก้ไขแล้ว";
+  const percent = activeView === "plan" ? planPercent() : activeView === "documents" ? documentReadyPercent() : devPercent();
+  const label = activeView === "plan" ? "พัฒนาแล้ว" : activeView === "documents" ? "ส่ง/เซ็นแล้ว" : "แก้ไขแล้ว";
   document.getElementById("overallPercent").textContent = `${percent}%`;
   document.getElementById("overallDonut").style.setProperty("--percent", percent);
   document.querySelector("#overallDonut small").textContent = label;
 }
 
 function setActiveView(view) {
-  activeView = view === "documents" ? "documents" : "dev";
+  activeView = ["dev", "documents", "plan"].includes(view) ? view : "dev";
 
   document.querySelectorAll("[data-view-panel]").forEach((panel) => {
     const isActive = panel.dataset.viewPanel === activeView;
@@ -471,6 +477,9 @@ function setActiveView(view) {
   document.querySelector(".sheet-link").href = sheetLinks[activeView];
   document.getElementById("heroSubtitle").innerHTML = heroSubtitles[activeView];
   syncHeroMeter();
+  document.querySelector(".hero h1").textContent = activeView === "plan" ? "Project Progress" : "ภาพรวมงานที่ต้องตามวันนี้";
+  document.querySelector(".hero-snapshot").hidden = activeView === "plan";
+  syncPmBrief();
 }
 
 function initViewTabs() {
@@ -480,7 +489,7 @@ function initViewTabs() {
     if (!button) return;
     setActiveView(button.dataset.view);
   });
-  setActiveView("dev");
+  setActiveView(location.hash === "#documents" ? "documents" : "dev");
 }
 
 function setOverallNumbers() {
@@ -818,13 +827,22 @@ async function refreshDashboard() {
     resetDocumentView(documentResult.reason);
   }
 
+  syncHeroMeter();
+  syncPmBrief();
+
   document.querySelector(".updated").textContent =
     devResult.status === "fulfilled" || documentResult.status === "fulfilled"
       ? `ข้อมูลล่าสุด ${updatedAt}`
       : "อัปเดตข้อมูล Google Sheet ไม่สำเร็จ";
 }
 
-initViewTabs();
-initDeveloperRankingToggle();
-refreshDashboard();
-setInterval(refreshDashboard, REFRESH_INTERVAL_MS);
+if (document.body.dataset.page === "plan") {
+  setActiveView("plan");
+  refreshProjectPlan();
+  setInterval(refreshProjectPlan, REFRESH_INTERVAL_MS);
+} else {
+  initViewTabs();
+  initDeveloperRankingToggle();
+  refreshDashboard();
+  setInterval(refreshDashboard, REFRESH_INTERVAL_MS);
+}

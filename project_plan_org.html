@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>project_plan_org | Project Progress</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="styles.css?v=20260916-pages" />
+  </head>
+  <body data-page="plan">
+    <header class="hero">
+      <nav class="topbar" aria-label="ภาพรวมระบบ">
+        <span class="brand">Project Progress</span>
+        <div class="topbar-actions">
+          <span class="updated">ข้อมูลล่าสุด 7 ส.ค. 2026</span>
+          <a
+            class="sheet-link"
+            href="https://docs.google.com/spreadsheets/d/1vAv6UKV57NoRlDG5a0tL88AI0qfGIcDWr74FLOm8cfA/edit?gid=1262019974#gid=1262019974"
+            target="_blank"
+            rel="noopener noreferrer"
+          >เปิด Google Sheet ↗</a>
+        </div>
+      </nav>
+
+      <section class="hero-grid">
+        <div class="hero-copy">
+          <p class="eyebrow">PM Progress Brief</p>
+          <h1>Project Progress</h1>
+          <p class="subtitle" id="heroSubtitle">
+            ติดตามงาน Dev 5 ระบบ และงานเอกสารส่งเซ็นหน้าจอจาก Google Sheet เดียวกัน
+          </p>
+          <div class="hero-snapshot" aria-label="สรุปย่อสำหรับ PM">
+            <article>
+              <span>DEV เสร็จแล้ว</span>
+              <strong id="heroDevDone">0/0</strong>
+              <small id="heroDevPercent">0% ภาพรวม DEV</small>
+            </article>
+            <article>
+              <span>เซ็นหน้าจอ</span>
+              <strong id="heroScreenSign">0/0</strong>
+              <small>กองเอกสารเซ็นหน้าจอ</small>
+            </article>
+            <article>
+              <span>เอกสารส่งงาน</span>
+              <strong id="heroDeliveryDocs">0/0</strong>
+              <small id="heroDeliveryPercent">0% ส่ง/เซ็นแล้ว</small>
+            </article>
+          </div>
+        </div>
+        <div class="hero-meter" aria-label="สถานะรวมมุมมองปัจจุบัน">
+          <div class="donut" id="overallDonut">
+            <span id="overallPercent">0%</span>
+            <small>แก้ไขแล้ว</small>
+          </div>
+          <div class="priority-card">
+            <span>ควรตามก่อน</span>
+            <strong id="heroFocusLabel">กำลังโหลดข้อมูล</strong>
+            <small id="heroFocusDetail">อ่านสถานะล่าสุดจาก Google Sheet</small>
+          </div>
+        </div>
+      </section>
+    </header>
+    <main>
+      <nav class="view-tabs" aria-label="เลือกหน้าสรุป">
+        <a href="index.html">งาน DEV</a>
+        <a href="index.html#documents">เอกสาร</a>
+        <a class="is-active" href="project_plan_org.html" aria-current="page">Project<br>Progress</a>
+      </nav>
+      <div class="dashboard-view" id="planView" data-view-panel="plan">
+        <section class="metrics" aria-label="ภาพรวม Project Progress">
+          <article class="metric-card"><span class="metric-label">งานทั้งหมด</span><strong id="planTotal">—</strong><small>รายการที่มีสถานะ · 3 ระบบ</small></article>
+          <article class="metric-card is-done"><span class="metric-label">พัฒนาแล้ว</span><strong id="planDone">—</strong><small id="planDoneRatio">กำลังโหลดข้อมูล</small></article>
+          <article class="metric-card is-problem"><span class="metric-label">ยังต้องติดตาม</span><strong id="planPending">—</strong><small id="planPendingRatio">กำลังโหลดข้อมูล</small></article>
+        </section>
+        <section class="panel" aria-labelledby="planTitle">
+          <div class="section-head"><div><p class="eyebrow">Project Progress</p><h2 id="planTitle">ภาพรวมความคืบหน้าโครงการ</h2></div><div class="legend"><span><i class="swatch done"></i>พัฒนาแล้ว</span><span><i class="swatch problem"></i>ยังต้องติดตาม</span></div></div>
+          <p id="planMessage" role="status">กำลังอ่าน Project Plan_ORG</p>
+          <div class="project-tabs" id="planTabs" aria-label="เลือกระบบในโครงการ"></div>
+          <div class="project-table" id="planRows"></div>
+        </section>
+        <section class="focus-strip"><strong>โฟกัสโครงการ</strong><span id="planFocus">กำลังอ่านข้อมูล</span></section>
+        <section class="details" aria-labelledby="planDetailsTitle"><div class="section-head"><div><p class="eyebrow">Project Detail</p><h2 id="planDetailsTitle">รายละเอียดทั้ง 3 ระบบ</h2></div></div><div class="detail-grid" id="planDetails"></div></section>
+      </div>
+    </main>
+    <footer><p>Developed และ Tested นับเป็นพัฒนาแล้ว · นับเฉพาะข้อที่มีสถานะใน Project Plan_ORG</p></footer>
+    <script src="project-progress.js?v=20260916-pages"></script>
+    <script src="script.js?v=20260916-pages"></script>
+  </body>
+</html>
