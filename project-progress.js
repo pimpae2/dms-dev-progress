@@ -15,7 +15,6 @@ async function initProjectPlans() {
       setText("planMessage", requested ? "ไม่พบชุดข้อมูลนี้ หรือถูกปิดการแสดง" : "ยังไม่มีชุดข้อมูลที่เปิดแสดง เพิ่มได้ที่หน้าตั้งค่า");
       setText("heroFocusLabel", "ยังไม่มีข้อมูล");
       setText("heroFocusDetail", "เลือกหรือเพิ่มชุดข้อมูลที่หน้าตั้งค่า");
-      document.querySelector(".source-sheet-link").hidden = true;
       setText("heroSubtitle", "เลือกชุดข้อมูลเพื่อดูความคืบหน้าโครงการ");
       setText("planFocus", "ยังไม่มีข้อมูล");
       setText("planDoneRatio", "ยังไม่มีข้อมูล");
@@ -24,7 +23,6 @@ async function initProjectPlans() {
       return;
     }
     document.querySelector(".hero h1").textContent = activePlan.name;
-    document.querySelector(".source-sheet-link").href = activePlan.url;
     setText("heroSubtitle", "Project Progress · นับเฉพาะข้อที่มีสถานะ · Developed และ Tested ถือว่าพัฒนาแล้ว");
     await refreshProjectPlan();
   } catch (error) { setText("planMessage", error.message); }

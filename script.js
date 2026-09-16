@@ -474,7 +474,8 @@ function setActiveView(view) {
     button.classList.toggle("is-active", button.dataset.view === activeView);
   });
 
-  document.querySelector(".source-sheet-link, .sheet-link:not([href='/set_plan_sheet'])").href = sheetLinks[activeView];
+  const sheetLink = document.querySelector(".sheet-link");
+  if (sheetLink) sheetLink.href = sheetLinks[activeView];
   document.getElementById("heroSubtitle").innerHTML = heroSubtitles[activeView];
   syncHeroMeter();
   document.querySelector(".hero h1").textContent = activeView === "plan" ? "Project Progress" : "ภาพรวมงานที่ต้องตามวันนี้";
