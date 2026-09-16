@@ -1,48 +1,92 @@
 let planSystems = [];
+let activePlan = null;
+let planRequest = 0;
+
+async function initProjectPlans() {
+  try {
+    const config = await readPlanConfig();
+    const plans = config.plans.filter(plan => plan.enabled);
+    const requested = new URLSearchParams(location.search).get("plan");
+    activePlan = plans.find(plan => plan.id === requested) || (!requested ? plans[0] : null);
+    const tabs = document.getElementById("planSourceTabs");
+    tabs.hidden = plans.length < 2;
+    tabs.innerHTML = plans.map(plan => `<a href="/project_plan?plan=${encodeURIComponent(plan.id)}" ${activePlan?.id === plan.id ? 'class="is-active" aria-current="page"' : ''}>${escapeHtml(plan.name)}</a>`).join("");
+    if (!activePlan) {
+      setText("planMessage", requested ? "ไม่พบชุดข้อมูลนี้ หรือถูกปิดการแสดง" : "ยังไม่มีชุดข้อมูลที่เปิดแสดง เพิ่มได้ที่หน้าตั้งค่า");
+      setText("heroFocusLabel", "ยังไม่มีข้อมูล");
+      setText("heroFocusDetail", "เลือกหรือเพิ่มชุดข้อมูลที่หน้าตั้งค่า");
+      document.querySelector(".source-sheet-link").hidden = true;
+      setText("heroSubtitle", "เลือกชุดข้อมูลเพื่อดูความคืบหน้าโครงการ");
+      setText("planFocus", "ยังไม่มีข้อมูล");
+      setText("planDoneRatio", "ยังไม่มีข้อมูล");
+      setText("planPendingRatio", "ยังไม่มีข้อมูล");
+      document.querySelector(".updated").textContent = "ยังไม่มีชุดข้อมูลที่เลือก";
+      return;
+    }
+    document.querySelector(".hero h1").textContent = activePlan.name;
+    document.querySelector(".source-sheet-link").href = activePlan.url;
+    setText("heroSubtitle", "Project Progress · นับเฉพาะข้อที่มีสถานะ · Developed และ Tested ถือว่าพัฒนาแล้ว");
+    await refreshProjectPlan();
+  } catch (error) { setText("planMessage", error.message); }
+}
 
 async function refreshProjectPlan() {
+  if (!activePlan) return;
+  const request = ++planRequest;
   try {
-    planSystems = await loadProjectPlan();
+    const systems = await loadProjectPlan(activePlan.url);
+    if (request !== planRequest) return;
+    planSystems = systems;
     renderProjectPlan();
     syncHeroMeter();
     syncPlanBrief();
     const updatedAt = new Intl.DateTimeFormat("th-TH", { dateStyle: "medium", timeStyle: "short" }).format(new Date());
     document.querySelector(".updated").textContent = `ข้อมูลล่าสุด ${updatedAt}`;
   } catch (error) {
+    if (request !== planRequest) return;
     setText("planMessage", `อัปเดต Project Progress ไม่สำเร็จ${planSystems.length ? " · แสดงข้อมูลครั้งล่าสุด" : ""}: ${error.message}`);
     document.querySelector(".updated").textContent = "อัปเดตข้อมูลไม่สำเร็จ";
   }
 }
 
 function parseProjectPlan(rows) {
+  rows = rows.map(row => row.map(cell => String(cell ?? "").trim()));
   const headerIndex = rows.findIndex((row) => row.includes("คำอธิบาย") && row.includes("สถานะ"));
   if (headerIndex < 0) throw new Error("ไม่พบคอลัมน์คำอธิบายและสถานะ");
   const headers = rows[headerIndex];
   const titleIndex = headers.indexOf("คำอธิบาย");
   const statusIndex = headers.indexOf("สถานะ");
   const codeIndex = titleIndex - 1;
-  const systems = [
-    { code: "1.1", name: "ระบบองค์กรนายจ้าง (จนท.กองทุน)", accent: "#7c5cc4" },
-    { code: "1.2", name: "ระบบ ePaySLF", accent: "#c06722" },
-    { code: "1.3", name: "ระบบลงพื้นที่ e-PaySLF", accent: "#228b57" },
-  ].map((system) => ({ ...system, slug: `plan-${system.code.replace(".", "-")}`, items: [] }));
+  const palette = ["#7c5cc4", "#c06722", "#228b57", "#2f73b7", "#2b8a8a"];
+  const systems = [];
+  let current = null;
   for (const row of rows.slice(headerIndex + 1)) {
     const code = String(row[codeIndex] || "").trim();
     const title = String(row[titleIndex] || "").trim();
     const status = String(row[statusIndex] || "").trim();
-    const system = systems.find((item) => code.startsWith(`${item.code}.`));
-    if (system && title && status) system.items.push({ code, title, status });
+    if (code && title && !status && /^\d+(?:\.\d+)*$/.test(code)) {
+      current = { code, name: title, accent: palette[systems.length % palette.length], slug: `plan-group-${systems.length}`, items: [] };
+      systems.push(current);
+      continue;
+    }
+    if (!title || !status || !code || !/^\d+(?:\.\d+)*$/.test(code)) continue;
+    const system = [...systems].reverse().find(item => code.startsWith(`${item.code}.`)) || current;
+    if (!system) throw new Error(`ข้อ ${code} ไม่มีหัวข้อระบบ กรุณาตรวจรูปแบบชีต`);
+    system.items.push({ code, title, status });
   }
-  if (!systems.some((system) => system.items.length)) throw new Error("ไม่พบข้อที่มีสถานะใน 3 ระบบ");
-  return systems.map((system) => ({
+  if (!systems.some((system) => system.items.length)) throw new Error("ไม่พบข้อที่มีสถานะใต้หัวข้อระบบ");
+  return systems.filter(system => system.items.length).map((system) => ({
     ...system,
     total: system.items.length,
     done: system.items.filter((item) => DONE_STATUSES.has(item.status)).length,
   }));
 }
 
-async function loadProjectPlan() {
-  return parseProjectPlan(await fetchCsvRows({ gid: "1021126458", displayName: "Project Plan_ORG" }));
+async function loadProjectPlan(link) {
+  const { spreadsheetId, gid } = parseSheetLink(link);
+  const response = await fetch(`https://docs.google.com/spreadsheets/d/${spreadsheetId}/gviz/tq?tqx=out:csv&gid=${gid}`, { cache: "no-store", signal: AbortSignal.timeout(20000) });
+  if (!response.ok) throw new Error("อ่านชีตไม่ได้ กรุณาตรวจลิงก์และสิทธิ์การเข้าถึง");
+  return parseProjectPlan(parseCsv(await response.text()));
 }
 
 function planTotals() {
@@ -73,9 +117,11 @@ function renderProjectPlan() {
   setText("planPending", `${total - done}/${total}`);
   setText("planDoneRatio", `${percent}% ของรายการที่มีสถานะ`);
   setText("planPendingRatio", `${100 - percent}% ของรายการที่มีสถานะ`);
-  setText("planMessage", `Project Plan_ORG · ${total} ข้อที่มีสถานะ${total !== 49 ? " · จำนวนรายการปัจจุบันต่างจาก 49 ข้อเดิม" : ""}`);
+  setText("planMessage", `${activePlan.name} · ${total} ข้อที่มีสถานะ`);
+  setText("planSystemCount", `รายการที่มีสถานะ · ${planSystems.length} ระบบ`);
+  setText("planDetailsTitle", `รายละเอียด ${planSystems.length} ระบบ`);
   const pending = planSystems.filter((system) => system.done < system.total);
-  setText("planFocus", pending.length ? pending.map((system) => `${system.name} เหลือ ${system.total - system.done} ข้อ`).join(" · ") : "พัฒนาครบทั้ง 3 ระบบแล้ว");
+  setText("planFocus", pending.length ? pending.map((system) => `${system.name} เหลือ ${system.total - system.done} ข้อ`).join(" · ") : "พัฒนาครบทุกระบบแล้ว");
   document.getElementById("planTabs").innerHTML = planSystems.map((system) => `<button type="button" data-plan-target="${system.slug}">${system.code} ${escapeHtml(system.name)}</button>`).join("");
   document.getElementById("planTabs").onclick = (event) => {
     const button = event.target.closest("button[data-plan-target]");

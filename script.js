@@ -474,7 +474,7 @@ function setActiveView(view) {
     button.classList.toggle("is-active", button.dataset.view === activeView);
   });
 
-  document.querySelector(".sheet-link").href = sheetLinks[activeView];
+  document.querySelector(".source-sheet-link, .sheet-link:not([href='/set_plan_sheet'])").href = sheetLinks[activeView];
   document.getElementById("heroSubtitle").innerHTML = heroSubtitles[activeView];
   syncHeroMeter();
   document.querySelector(".hero h1").textContent = activeView === "plan" ? "Project Progress" : "ภาพรวมงานที่ต้องตามวันนี้";
@@ -838,9 +838,9 @@ async function refreshDashboard() {
 
 if (document.body.dataset.page === "plan") {
   setActiveView("plan");
-  refreshProjectPlan();
+  initProjectPlans();
   setInterval(refreshProjectPlan, REFRESH_INTERVAL_MS);
-} else {
+} else if (document.body.dataset.page !== "plan-settings") {
   initViewTabs();
   initDeveloperRankingToggle();
   refreshDashboard();
