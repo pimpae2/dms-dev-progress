@@ -5,7 +5,7 @@ function isAllowedGoogleHost(hostname) {
   return hostname === 'docs.google.com' || hostname.endsWith('.googleusercontent.com');
 }
 
-export function readGoogleText(rawUrl, { accept, maxBytes = 2 * 1024 * 1024, redirects = 0 } = {}) {
+export function readGoogleBuffer(rawUrl, { accept, maxBytes = 10 * 1024 * 1024, redirects = 0 } = {}) {
   return new Promise((resolve, reject) => {
     const url = new URL(rawUrl);
     if (url.protocol !== 'https:' || !isAllowedGoogleHost(url.hostname)) return reject(new Error('Blocked Google host'));
@@ -15,7 +15,7 @@ export function readGoogleText(rawUrl, { accept, maxBytes = 2 * 1024 * 1024, red
       if ([301, 302, 303, 307, 308].includes(response.statusCode) && response.headers.location) {
         response.resume();
         if (redirects >= 3) return reject(new Error('Too many Google redirects'));
-        return resolve(readGoogleText(new URL(response.headers.location, url).href, { accept, maxBytes, redirects: redirects + 1 }));
+        return resolve(readGoogleBuffer(new URL(response.headers.location, url).href, { accept, maxBytes, redirects: redirects + 1 }));
       }
       const chunks = [];
       let size = 0;
@@ -28,10 +28,10 @@ export function readGoogleText(rawUrl, { accept, maxBytes = 2 * 1024 * 1024, red
         ok: response.statusCode >= 200 && response.statusCode < 300,
         status: response.statusCode || 0,
         contentType: String(response.headers['content-type'] || ''),
-        text: Buffer.concat(chunks).toString('utf8'),
+        buffer: Buffer.concat(chunks),
       }));
     });
-    request.setTimeout(20000, () => request.destroy(new Error('Google request timed out')));
+    request.setTimeout(25000, () => request.destroy(new Error('Google request timed out')));
     request.on('error', reject);
   });
 }

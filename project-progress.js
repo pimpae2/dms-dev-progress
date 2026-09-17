@@ -11,12 +11,12 @@ async function loadWorkbookTabs() {
   const response = await fetch("/api/workbook", { cache: "no-store", signal: AbortSignal.timeout(25000) });
   const result = await response.json().catch(() => ({}));
   if (!response.ok || !Array.isArray(result.tabs)) throw new Error(result.error || "อ่านรายชื่อโปรเจกต์ไม่สำเร็จ");
-  return result.tabs.map(tab => ({ ...tab, id: tab.gid, displayName: projectDisplayName(tab.name) }));
+  return result.tabs.map(tab => ({ ...tab, id: tab.id || tab.name, displayName: projectDisplayName(tab.name) }));
 }
 
 function renderProjectSourceTabs() {
   const tabs = document.getElementById("planSourceTabs");
-  tabs.innerHTML = workbookTabs.map(plan => `<button type="button" data-project-gid="${plan.gid}" ${activePlan?.gid === plan.gid ? 'class="is-active" aria-current="page"' : ""}>${escapeHtml(plan.displayName)}</button>`).join("");
+  tabs.innerHTML = workbookTabs.map(plan => `<button type="button" data-project-id="${escapeHtml(plan.id)}" ${activePlan?.id === plan.id ? 'class="is-active" aria-current="page"' : ""}>${escapeHtml(plan.displayName)}</button>`).join("");
 }
 
 function showNoProject(message) {
@@ -34,11 +34,11 @@ async function initProjectPlans() {
   try {
     workbookTabs = await loadWorkbookTabs();
     const requested = new URLSearchParams(location.search).get("project");
-    activePlan = workbookTabs.find(plan => plan.gid === requested)
-      || workbookTabs.find(plan => plan.gid === activePlan?.gid)
+    activePlan = workbookTabs.find(plan => plan.id === requested)
+      || workbookTabs.find(plan => plan.id === activePlan?.id)
       || workbookTabs[0]
       || null;
-    if (requested && activePlan && activePlan.gid !== requested) history.replaceState(null, "", `/?project=${encodeURIComponent(activePlan.gid)}`);
+    if (requested && activePlan && activePlan.id !== requested) history.replaceState(null, "", `/?project=${encodeURIComponent(activePlan.id)}`);
     renderProjectSourceTabs();
     if (!activePlan) {
       showNoProject("ยังไม่พบแท็บใน Google Sheet");
@@ -51,14 +51,14 @@ async function initProjectPlans() {
 }
 
 document.getElementById("planSourceTabs")?.addEventListener("click", async event => {
-  const button = event.target.closest("button[data-project-gid]");
-  if (!button || button.dataset.projectGid === activePlan?.gid) return;
-  activePlan = workbookTabs.find(plan => plan.gid === button.dataset.projectGid) || null;
+  const button = event.target.closest("button[data-project-id]");
+  if (!button || button.dataset.projectId === activePlan?.id) return;
+  activePlan = workbookTabs.find(plan => plan.id === button.dataset.projectId) || null;
   if (!activePlan) return;
   planSystems = [];
   renderProjectSourceTabs();
   document.querySelector(".hero h1").textContent = activePlan.displayName;
-  history.replaceState(null, "", `/?project=${encodeURIComponent(activePlan.gid)}`);
+  history.replaceState(null, "", `/?project=${encodeURIComponent(activePlan.id)}`);
   setText("planMessage", `กำลังอ่าน ${activePlan.displayName}`);
   await refreshProjectPlan();
 });
@@ -67,7 +67,7 @@ async function refreshProjectPlan() {
   if (!activePlan) return;
   const request = ++planRequest;
   try {
-    const systems = await loadProjectPlan(activePlan.gid);
+    const systems = await loadProjectPlan(activePlan.id);
     if (request !== planRequest) return;
     planSystems = systems;
     renderProjectPlan();
@@ -122,11 +122,11 @@ function parseProjectPlan(rows, fallbackName = activePlan?.displayName || "Proje
   }));
 }
 
-async function loadProjectPlan(gid) {
+async function loadProjectPlan(name) {
   if (location.protocol === "file:") throw new Error("กรุณาเปิดหน้านี้ผ่านเว็บ Netlify หรือ localhost ไม่ใช่เปิดไฟล์ HTML โดยตรง");
   let response;
   try {
-    response = await fetch(`/api/sheet?gid=${encodeURIComponent(gid)}`, { cache: "no-store", signal: AbortSignal.timeout(20000) });
+    response = await fetch(`/api/sheet?name=${encodeURIComponent(name)}`, { cache: "no-store", signal: AbortSignal.timeout(25000) });
   } catch {
     throw new Error("เชื่อมต่อบริการอ่านชีตไม่ได้ กรุณาตรวจอินเทอร์เน็ตและเปิดหน้าเว็บใหม่");
   }
@@ -134,8 +134,9 @@ async function loadProjectPlan(gid) {
     const result = await response.json().catch(() => ({}));
     throw new Error(result.error || "ไม่พบบริการอ่านชีต กรุณา Deploy พร้อม Netlify Functions หรือเริ่มเซิร์ฟเวอร์ใหม่");
   }
-  if (!response.headers.get("content-type")?.includes("text/csv")) throw new Error("ยังไม่มีบริการอ่านชีต กรุณา Deploy พร้อม Netlify Functions");
-  return parseProjectPlan(parseCsv(await response.text()));
+  const result = await response.json().catch(() => ({}));
+  if (!Array.isArray(result.rows)) throw new Error("รูปแบบข้อมูลจากบริการอ่านชีตไม่ถูกต้อง");
+  return parseProjectPlan(result.rows);
 }
 
 function planTotals() {

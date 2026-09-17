@@ -19,9 +19,9 @@ The workbook must be readable by anyone with the link. The Netlify Functions
 proxy is restricted to this workbook and exposes read-only GET endpoints:
 
 - `/api/workbook` lists visible tabs.
-- `/api/sheet?gid=<tab-id>` returns one tab as CSV.
+- `/api/sheet?name=<tab-name>` returns one tab as JSON.
 
-Run locally with Node.js 20 or newer:
+Run locally with Node.js 22 or newer:
 
 ```sh
 node server.mjs
