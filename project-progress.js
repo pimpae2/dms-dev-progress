@@ -45,6 +45,7 @@ function showNoProject(message) {
 }
 
 function showProjectLoading(label = activePlan?.displayName || "Project Progress") {
+  document.body.classList.add("is-loading-plan");
   setText("planMessage", `กำลังอ่าน ${label}`);
   setText("planTotal", "...");
   setText("planDone", "...");
@@ -60,7 +61,9 @@ function showProjectLoading(label = activePlan?.displayName || "Project Progress
   detailsSection.hidden = true;
   planTabs.innerHTML = "";
   document.getElementById("planDetails").innerHTML = "";
-  document.getElementById("planRows").innerHTML = Array.from({ length: 4 }, (_, index) => `
+  const planRows = document.getElementById("planRows");
+  planRows.className = "project-table is-ready";
+  planRows.innerHTML = Array.from({ length: 4 }, (_, index) => `
     <article class="project-row loading-row" aria-hidden="true">
       <div class="row-name">
         <span class="loading-line ${index === 0 ? "is-wide" : ""}"></span>
@@ -125,12 +128,14 @@ async function refreshProjectPlan() {
     if (request !== planRequest) return;
     planSystems = systems;
     renderProjectPlan();
+    document.body.classList.remove("is-loading-plan");
     syncHeroMeter();
     syncPlanBrief();
     const updatedAt = new Intl.DateTimeFormat("th-TH", { dateStyle: "medium", timeStyle: "short" }).format(new Date());
     document.querySelector(".updated").textContent = `ข้อมูลล่าสุด ${updatedAt}`;
   } catch (error) {
     if (request !== planRequest) return;
+    document.body.classList.remove("is-loading-plan");
     setText("planMessage", `อัปเดต Project Progress ไม่สำเร็จ${planSystems.length ? " · แสดงข้อมูลครั้งล่าสุด" : ""}: ${error.message}`);
     document.querySelector(".updated").textContent = "อัปเดตข้อมูลไม่สำเร็จ";
   }
@@ -236,6 +241,35 @@ function planBar(system) {
   return `<div class="bar" role="img" aria-label="พัฒนาแล้ว ${system.done} จาก ${system.total} ข้อ"><span style="width:${percent}%"></span><span style="width:${100 - percent}%"></span></div>`;
 }
 
+function statusChipClass(status) {
+  const key = String(status || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  return `status-${key || "other"} ${DONE_STATUSES.has(status) ? "is-done" : ""}`.trim();
+}
+
+function renderEmptyState(title, detail) {
+  return `<article class="empty-state"><div class="empty-mark">0%</div><div><strong>${escapeHtml(title)}</strong><p>${escapeHtml(detail)}</p></div></article>`;
+}
+
+function renderDashboardCard(system) {
+  const percent = fmtPercent(system.done, system.total);
+  return `<button type="button" class="dashboard-card" data-project-link="${escapeHtml(system.sourcePlanId)}" aria-label="เปิดแท็บ ${escapeHtml(system.name)}">
+    <div class="dashboard-card-head">
+      <strong>${escapeHtml(system.name)}</strong>
+      <span>${percent}%</span>
+    </div>
+    ${planBar(system)}
+    <div class="dashboard-card-foot">
+      <span>พัฒนาแล้ว <b>${system.done}/${system.total}</b></span>
+      <span>ติดตาม <b>${system.total - system.done}</b></span>
+    </div>
+  </button>`;
+}
+
+function revealPlanRows(planRows) {
+  planRows.classList.remove("is-ready");
+  requestAnimationFrame(() => planRows.classList.add("is-ready"));
+}
+
 function renderProjectPlan() {
   const { total, done } = planTotals();
   const percent = planPercent();
@@ -259,17 +293,21 @@ function renderProjectPlan() {
     document.getElementById(button.dataset.planTarget).scrollIntoView({ behavior: "smooth", block: "start" });
   };
   const planRows = document.getElementById("planRows");
-  planRows.innerHTML = planSystems.map((system) => activePlan.isDashboard
-    ? `<button type="button" class="project-row dashboard-project-row" data-project-link="${escapeHtml(system.sourcePlanId)}" aria-label="เปิดแท็บ ${escapeHtml(system.name)}"><div class="row-name"><strong>${escapeHtml(system.name)}</strong><small>${system.total} ข้อ · เปิดแท็บ</small></div>${planBar(system)}<div class="row-counts"><span class="done-count">${system.done}/${system.total}</span><span class="problem-count">${system.total - system.done}/${system.total}</span><span class="percent">${fmtPercent(system.done, system.total)}%</span></div></button>`
-    : `<article class="project-row"><div class="row-name"><strong>${system.code} ${escapeHtml(system.name)}</strong><small>${system.total} ข้อ</small></div>${planBar(system)}<div class="row-counts"><span class="done-count">${system.done}/${system.total}</span><span class="problem-count">${system.total - system.done}/${system.total}</span><span class="percent">${fmtPercent(system.done, system.total)}%</span></div></article>`).join("");
+  planRows.className = activePlan.isDashboard ? "project-table dashboard-grid" : "project-table";
+  planRows.innerHTML = planSystems.length
+    ? planSystems.map((system) => activePlan.isDashboard
+      ? renderDashboardCard(system)
+      : `<article class="project-row"><div class="row-name"><strong>${system.code} ${escapeHtml(system.name)}</strong><small>${system.total} ข้อ</small></div>${planBar(system)}<div class="row-counts"><span class="done-count">${system.done}/${system.total}</span><span class="problem-count">${system.total - system.done}/${system.total}</span><span class="percent">${fmtPercent(system.done, system.total)}%</span></div></article>`).join("")
+    : renderEmptyState(activePlan.isDashboard ? "ยังไม่มีข้อมูล Dashboard" : `${activePlan.displayName} ยังไม่มีรายการสถานะ`, activePlan.isDashboard ? "เพิ่มข้อมูลในแท็บโปรเจกต์ แล้ว Dashboard จะสรุปให้อัตโนมัติ" : "แท็บนี้ยังไม่มีรายการที่มีสถานะ แสดงเป็นหน้าว่างไว้ก่อน");
+  revealPlanRows(planRows);
   planRows.onclick = async event => {
     const row = event.target.closest("button[data-project-link]");
     if (row) await activateProject(row.dataset.projectLink);
   };
   document.getElementById("planDetails").innerHTML = activePlan.isDashboard ? "" : planSystems.map((system) => {
     const counts = countBy(system.items, (item) => item.status);
-    const chips = Object.entries(counts).map(([status, count]) => `<span class="status-chip ${DONE_STATUSES.has(status) ? "is-done" : ""}">${escapeHtml(status)} <strong>${count}</strong></span>`).join("");
-    const items = system.items.map((item) => `<li><span class="plan-item-code">${escapeHtml(item.code)}</span><span>${escapeHtml(item.title)}</span><span class="status-chip ${DONE_STATUSES.has(item.status) ? "is-done" : ""}">${escapeHtml(item.status)}</span></li>`).join("");
+    const chips = Object.entries(counts).map(([status, count]) => `<span class="status-chip ${statusChipClass(status)}">${escapeHtml(status)} <strong>${count}</strong></span>`).join("");
+    const items = system.items.map((item) => `<li class="${DONE_STATUSES.has(item.status) ? "is-done" : "needs-followup"}"><span class="plan-item-code">${escapeHtml(item.code)}</span><span>${escapeHtml(item.title)}</span><span class="status-chip ${statusChipClass(item.status)}">${escapeHtml(item.status)}</span></li>`).join("");
     return `<article class="detail-card" id="${system.slug}" style="--accent:${system.accent}"><div class="detail-head"><div><p class="eyebrow">${system.code}</p><h3>${escapeHtml(system.name)}</h3><p>พัฒนาแล้ว ${system.done}/${system.total} ข้อ · ติดตาม ${system.total - system.done} ข้อ</p></div><div class="donut small-donut" style="--percent:${fmtPercent(system.done, system.total)};--accent:${system.accent}"><span>${fmtPercent(system.done, system.total)}%</span><small>พัฒนาแล้ว</small></div></div>${planBar(system)}<div class="status-list">${chips}</div><details class="plan-items" open><summary>รายการทั้งหมด ${system.total} ข้อ</summary><ul>${items}</ul></details></article>`;
   }).join("");
 }

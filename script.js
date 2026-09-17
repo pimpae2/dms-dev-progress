@@ -26,6 +26,11 @@ const heroSubtitles = {
   documents: "งานเอกสารอ่านจากแท็บเอกสารส่งเซ็นหน้าจอ โดยแสดงสถานะของแต่ละระบบแยกตามตัวงาน",
 };
 
+function statusChipClass(status) {
+  const key = String(status || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  return `status-${key || "other"} ${DONE_STATUSES.has(status) ? "is-done" : ""}`.trim();
+}
+
 const documentStatusOrder = [
   "เซ็นหน้าจอแล้ว",
   "ส่งแล้ว",
@@ -595,7 +600,7 @@ function renderDetails() {
       ? project.notes.map((note) => `<li>${escapeHtml(note)}</li>`).join("")
       : "<li>ไม่มีงานค้าง</li>";
     const statuses = project.status.map(([name, count, isDone]) =>
-      `<span class="status-chip ${isDone ? "is-done" : ""}">${escapeHtml(name)} <strong>${count}</strong></span>`,
+      `<span class="status-chip ${statusChipClass(name)}">${escapeHtml(name)} <strong>${count}</strong></span>`,
     ).join("");
 
     return `<article id="${escapeHtml(project.slug)}" class="detail-card ${index === 0 ? "is-highlight" : ""}" style="--accent:${project.accent}">
