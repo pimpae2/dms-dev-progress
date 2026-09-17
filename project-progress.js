@@ -44,6 +44,38 @@ function showNoProject(message) {
   document.querySelector(".updated").textContent = "ยังไม่มีโปรเจกต์ที่เลือก";
 }
 
+function showProjectLoading(label = activePlan?.displayName || "Project Progress") {
+  setText("planMessage", `กำลังอ่าน ${label}`);
+  setText("planTotal", "...");
+  setText("planDone", "...");
+  setText("planPending", "...");
+  setText("planDoneRatio", "กำลังโหลดข้อมูล");
+  setText("planPendingRatio", "กำลังโหลดข้อมูล");
+  setText("planSystemCount", "กำลังอ่านรายการที่มีสถานะ");
+  setText("planDetailsTitle", "รายละเอียดกำลังโหลด");
+  document.querySelector(".updated").textContent = "กำลังอัปเดตข้อมูล";
+  const planTabs = document.getElementById("planTabs");
+  const detailsSection = document.getElementById("planDetailsSection");
+  planTabs.hidden = true;
+  detailsSection.hidden = true;
+  planTabs.innerHTML = "";
+  document.getElementById("planDetails").innerHTML = "";
+  document.getElementById("planRows").innerHTML = Array.from({ length: 4 }, (_, index) => `
+    <article class="project-row loading-row" aria-hidden="true">
+      <div class="row-name">
+        <span class="loading-line ${index === 0 ? "is-wide" : ""}"></span>
+        <span class="loading-line is-small"></span>
+      </div>
+      <div class="bar is-loading"><span></span></div>
+      <div class="row-counts">
+        <span class="loading-pill"></span>
+        <span class="loading-pill"></span>
+        <span class="loading-pill is-short"></span>
+      </div>
+    </article>
+  `).join("");
+}
+
 async function initProjectPlans() {
   try {
     workbookTabs = [DASHBOARD_PLAN, ...await loadWorkbookTabs()];
@@ -60,6 +92,7 @@ async function initProjectPlans() {
     }
     document.querySelector(".hero h1").textContent = activePlan.displayName;
     setText("heroSubtitle", "Project Progress · นับเฉพาะข้อที่มีสถานะ · Developed และ Tested ถือว่าพัฒนาแล้ว");
+    showProjectLoading(activePlan.displayName);
     await refreshProjectPlan();
   } catch (error) { setText("planMessage", error.message); }
 }
@@ -72,7 +105,7 @@ async function activateProject(projectId) {
   renderProjectSourceTabs();
   document.querySelector(".hero h1").textContent = activePlan.displayName;
   history.replaceState(null, "", `/?project=${encodeURIComponent(activePlan.id)}`);
-  setText("planMessage", `กำลังอ่าน ${activePlan.displayName}`);
+  showProjectLoading(activePlan.displayName);
   await refreshProjectPlan();
 }
 
