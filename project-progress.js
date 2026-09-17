@@ -82,8 +82,18 @@ function parseProjectPlan(rows) {
 
 async function loadProjectPlan(link) {
   const { spreadsheetId, gid } = parseSheetLink(link);
-  const response = await fetch(`https://docs.google.com/spreadsheets/d/${spreadsheetId}/gviz/tq?tqx=out:csv&gid=${gid}`, { cache: "no-store", signal: AbortSignal.timeout(20000) });
-  if (!response.ok) throw new Error("อ่านชีตไม่ได้ กรุณาตรวจลิงก์และสิทธิ์การเข้าถึง");
+  if (location.protocol === "file:") throw new Error("กรุณาเปิดหน้านี้ผ่านเว็บ Netlify หรือ localhost ไม่ใช่เปิดไฟล์ HTML โดยตรง");
+  let response;
+  try {
+    response = await fetch(`/api/sheet?id=${encodeURIComponent(spreadsheetId)}&gid=${encodeURIComponent(gid)}`, { cache: "no-store", signal: AbortSignal.timeout(20000) });
+  } catch {
+    throw new Error("เชื่อมต่อบริการอ่านชีตไม่ได้ กรุณาตรวจอินเทอร์เน็ตและเปิดหน้าเว็บใหม่");
+  }
+  if (!response.ok) {
+    const result = await response.json().catch(() => ({}));
+    throw new Error(result.error || "ไม่พบบริการอ่านชีต กรุณา Deploy พร้อม Netlify Functions หรือเริ่มเซิร์ฟเวอร์ใหม่");
+  }
+  if (!response.headers.get("content-type")?.includes("text/csv")) throw new Error("ยังไม่มีบริการอ่านชีต กรุณา Deploy พร้อม Netlify Functions");
   return parseProjectPlan(parseCsv(await response.text()));
 }
 

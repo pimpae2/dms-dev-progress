@@ -12,7 +12,13 @@ function parseSheetLink(value) {
 let planAdminToken = "";
 
 async function readPlanConfig() {
-  const response = await fetch("/api/plans", { cache: "no-store", headers: planAdminToken ? { Authorization: `Bearer ${planAdminToken}` } : {} });
+  if (location.protocol === "file:") throw new Error("กรุณาเปิดผ่านเว็บ Netlify หรือ localhost ไม่ใช่เปิดไฟล์ HTML โดยตรง");
+  let response;
+  try {
+    response = await fetch("/api/plans", { cache: "no-store", signal: AbortSignal.timeout(25000), headers: planAdminToken ? { Authorization: `Bearer ${planAdminToken}` } : {} });
+  } catch {
+    throw new Error("เชื่อมต่อบริการตั้งค่าไม่ได้ กรุณาตรวจอินเทอร์เน็ตและเปิดหน้าเว็บใหม่");
+  }
   const isHtml = (response.headers.get("content-type") || "").includes("text/html");
   if (response.status === 404 || response.status === 405 || (response.ok && isHtml)) {
     const published = await fetch("/plans-public.json", { cache: "no-store" });

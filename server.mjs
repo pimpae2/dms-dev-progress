@@ -3,6 +3,7 @@ import { readFile, writeFile, rename } from 'node:fs/promises';
 import { dirname, join, extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomUUID } from 'node:crypto';
+import { readSheet } from './netlify/sheet-handler.mjs';
 
 const root = dirname(fileURLToPath(import.meta.url));
 const configPath = join(root, 'plan-settings.json');
@@ -35,6 +36,11 @@ function validatePlans(plans) {
 http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url, `http://127.0.0.1:${port}`);
+    if (url.pathname === '/api/sheet') {
+      const response = await readSheet(new Request(url, { method: req.method }));
+      res.writeHead(response.status, Object.fromEntries(response.headers));
+      return res.end(Buffer.from(await response.arrayBuffer()));
+    }
     if (url.pathname === '/api/plans') {
       if (req.method === 'GET') return send(res, 200, config);
       if (req.method !== 'PUT') return send(res, 405, { error: 'Method not allowed' });
