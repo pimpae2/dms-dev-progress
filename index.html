@@ -18,7 +18,6 @@
 
       <section class="hero-grid">
         <div class="hero-copy">
-          <p class="eyebrow">PM Progress Brief</p>
           <h1>Project Progress</h1>
           <p class="subtitle" id="heroSubtitle">
             ความคืบหน้าของชุดข้อมูลที่เลือก
@@ -46,7 +45,7 @@
             <span id="overallPercent">0%</span>
             <small>แก้ไขแล้ว</small>
           </div>
-          <div class="priority-card">
+          <div class="priority-card" hidden>
             <span>ควรตามก่อน</span>
             <strong id="heroFocusLabel">กำลังโหลดข้อมูล</strong>
             <small id="heroFocusDetail">อ่านสถานะล่าสุดจาก Google Sheet</small>
@@ -68,8 +67,7 @@
           <div class="project-tabs" id="planTabs" aria-label="เลือกระบบในโครงการ"></div>
           <div class="project-table" id="planRows"></div>
         </section>
-        <section class="focus-strip"><strong>โฟกัสโครงการ</strong><span id="planFocus">กำลังอ่านข้อมูล</span></section>
-        <section class="details" aria-labelledby="planDetailsTitle"><div class="section-head"><div><p class="eyebrow">Project Detail</p><h2 id="planDetailsTitle">รายละเอียดรายระบบ</h2></div></div><div class="detail-grid" id="planDetails"></div></section>
+        <section class="details" id="planDetailsSection" aria-labelledby="planDetailsTitle"><div class="section-head"><div><p class="eyebrow">Project Detail</p><h2 id="planDetailsTitle">รายละเอียดรายระบบ</h2></div></div><div class="detail-grid" id="planDetails"></div></section>
       </div>
     </main>
     <footer><p>Developed และ Tested นับเป็นพัฒนาแล้ว · นับเฉพาะข้อที่มีสถานะ</p></footer>

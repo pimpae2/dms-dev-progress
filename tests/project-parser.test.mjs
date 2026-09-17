@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import vm from 'node:vm';
 
-const source = `${await readFile(new URL('../project-progress.js', import.meta.url), 'utf8')}\nglobalThis.parseProjectPlanForTest = parseProjectPlan; globalThis.parseWorkbookTabsForTest = parseWorkbookTabsHtml;`;
+const source = `${await readFile(new URL('../project-progress.js', import.meta.url), 'utf8')}\nglobalThis.parseProjectPlanForTest = parseProjectPlan; globalThis.parseWorkbookTabsForTest = parseWorkbookTabsHtml; globalThis.combineDashboardSystemsForTest = combineDashboardSystems;`;
 const context = {
   DONE_STATUSES: new Set(['Developed', 'Tested']),
   document: { getElementById: () => null },
@@ -44,4 +44,27 @@ test('parses flat project tabs as a single project group', () => {
   assert.equal(result[0].name, 'DMS');
   assert.equal(result[0].total, 2);
   assert.equal(result[0].done, 1);
+});
+
+test('keeps empty project tabs available without an error', () => {
+  assert.equal(context.parseProjectPlanForTest([], 'EMPTY').length, 0);
+  assert.equal(context.parseProjectPlanForTest([
+    ['#', 'หน้าจอ/เมนู/หัวข้อ', 'สถานะ'],
+  ], 'EMPTY').length, 0);
+});
+
+test('combines systems from every populated project tab', () => {
+  const result = context.combineDashboardSystemsForTest([
+    { plan: { displayName: 'ORG' }, systems: [{ name: 'ระบบนายจ้าง', slug: 'plan-group-0', total: 2, done: 1, items: [] }] },
+    { plan: { displayName: 'DMS' }, systems: [{ name: 'DMS', slug: 'plan-group-0', total: 3, done: 2, items: [] }] },
+    { plan: { displayName: 'EMPTY' }, systems: [] },
+  ]);
+  assert.equal(result.length, 3);
+  assert.equal(result[0].name, 'ORG');
+  assert.equal(result[0].total, 2);
+  assert.equal(result[0].done, 1);
+  assert.equal(result[1].name, 'DMS');
+  assert.equal(result[2].name, 'EMPTY');
+  assert.equal(result[2].total, 0);
+  assert.notEqual(result[0].slug, result[1].slug);
 });

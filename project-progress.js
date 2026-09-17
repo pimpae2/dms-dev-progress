@@ -2,7 +2,9 @@ let planSystems = [];
 let workbookTabs = [];
 let activePlan = null;
 let planRequest = 0;
+let dashboardFailedTabs = 0;
 const PROJECT_WORKBOOK_ID = "1Hi1M7GNhA5G2p7BgiGLH3F5A3aKgO2A-iU46XGOvFC8";
+const DASHBOARD_PLAN = { id: "dashboard", displayName: "Dashboard", isDashboard: true };
 
 function projectDisplayName(name) {
   return String(name || "").replace(/^Project\s*Plan[_\s-]*/i, "").trim() || String(name || "Project Progress");
@@ -37,7 +39,6 @@ function showNoProject(message) {
   setText("heroFocusLabel", "ยังไม่มีข้อมูล");
   setText("heroFocusDetail", "เพิ่มแท็บใน Google Sheet เพื่อแสดงโปรเจกต์");
   setText("heroSubtitle", "ยังไม่พบแท็บโปรเจกต์ที่เปิดอ่านได้");
-  setText("planFocus", "ยังไม่มีข้อมูล");
   setText("planDoneRatio", "ยังไม่มีข้อมูล");
   setText("planPendingRatio", "ยังไม่มีข้อมูล");
   document.querySelector(".updated").textContent = "ยังไม่มีโปรเจกต์ที่เลือก";
@@ -45,7 +46,7 @@ function showNoProject(message) {
 
 async function initProjectPlans() {
   try {
-    workbookTabs = await loadWorkbookTabs();
+    workbookTabs = [DASHBOARD_PLAN, ...await loadWorkbookTabs()];
     const requested = new URLSearchParams(location.search).get("project");
     activePlan = workbookTabs.find(plan => plan.id === requested)
       || workbookTabs.find(plan => plan.id === activePlan?.id)
@@ -63,10 +64,9 @@ async function initProjectPlans() {
   } catch (error) { setText("planMessage", error.message); }
 }
 
-document.getElementById("planSourceTabs")?.addEventListener("click", async event => {
-  const button = event.target.closest("button[data-project-id]");
-  if (!button || button.dataset.projectId === activePlan?.id) return;
-  activePlan = workbookTabs.find(plan => plan.id === button.dataset.projectId) || null;
+async function activateProject(projectId) {
+  if (projectId === activePlan?.id) return;
+  activePlan = workbookTabs.find(plan => plan.id === projectId) || null;
   if (!activePlan) return;
   planSystems = [];
   renderProjectSourceTabs();
@@ -74,13 +74,21 @@ document.getElementById("planSourceTabs")?.addEventListener("click", async event
   history.replaceState(null, "", `/?project=${encodeURIComponent(activePlan.id)}`);
   setText("planMessage", `กำลังอ่าน ${activePlan.displayName}`);
   await refreshProjectPlan();
+}
+
+document.getElementById("planSourceTabs")?.addEventListener("click", async event => {
+  const button = event.target.closest("button[data-project-id]");
+  if (button) await activateProject(button.dataset.projectId);
 });
 
 async function refreshProjectPlan() {
   if (!activePlan) return;
   const request = ++planRequest;
   try {
-    const systems = await loadProjectPlan(activePlan.gid);
+    dashboardFailedTabs = 0;
+    const systems = activePlan.isDashboard
+      ? await loadDashboardPlan()
+      : await loadProjectPlan(activePlan.gid, activePlan.displayName);
     if (request !== planRequest) return;
     planSystems = systems;
     renderProjectPlan();
@@ -99,12 +107,12 @@ function parseProjectPlan(rows, fallbackName = activePlan?.displayName || "Proje
   rows = rows.map(row => row.map(cell => String(cell ?? "").trim()));
   const titleHeaders = ["คำอธิบาย", "หน้าจอ/เมนู/หัวข้อ"];
   const headerIndex = rows.findIndex((row) => titleHeaders.some(header => row.includes(header)) && row.includes("สถานะ"));
-  if (headerIndex < 0) throw new Error("ไม่พบคอลัมน์หน้าจอ/เมนู/หัวข้อและสถานะ");
+  if (headerIndex < 0) return [];
   const headers = rows[headerIndex];
   const titleIndex = titleHeaders.map(header => headers.indexOf(header)).find(index => index >= 0);
   const statusIndex = headers.indexOf("สถานะ");
   const codeIndex = titleIndex - 1;
-  const palette = ["#7c5cc4", "#c06722", "#228b57", "#2f73b7", "#2b8a8a"];
+  const palette = ["#0b6fb3", "#168fbd", "#2d83c5", "#3e75c7", "#0b9abd"];
   const systems = [];
   let current = null;
   let fallback = null;
@@ -127,7 +135,6 @@ function parseProjectPlan(rows, fallbackName = activePlan?.displayName || "Proje
     }
     system.items.push({ code, title, status });
   }
-  if (!systems.some((system) => system.items.length)) throw new Error("ไม่พบข้อที่มีสถานะใต้หัวข้อระบบ");
   return systems.filter(system => system.items.length).map((system) => ({
     ...system,
     total: system.items.length,
@@ -135,7 +142,7 @@ function parseProjectPlan(rows, fallbackName = activePlan?.displayName || "Proje
   }));
 }
 
-async function loadProjectPlan(gid) {
+async function loadProjectPlan(gid, fallbackName = activePlan?.displayName || "Project") {
   if (location.protocol === "file:") throw new Error("กรุณาเปิดหน้านี้ผ่านเว็บ Netlify หรือ localhost ไม่ใช่เปิดไฟล์ HTML โดยตรง");
   let response;
   try {
@@ -148,7 +155,32 @@ async function loadProjectPlan(gid) {
   if (!response.ok) {
     throw new Error("อ่านข้อมูลแท็บนี้ไม่สำเร็จ กรุณาตรวจสิทธิ์ Google Sheet");
   }
-  return parseProjectPlan(parseCsv(await response.text()));
+  return parseProjectPlan(parseCsv(await response.text()), fallbackName);
+}
+
+function combineDashboardSystems(entries) {
+  return entries.map(({ plan, systems }, index) => ({
+    code: "",
+    name: plan.displayName,
+    accent: systems[0]?.accent || "#0b6fb3",
+    slug: `dashboard-project-${index}`,
+    sourcePlanId: plan.id,
+    items: [],
+    total: systems.reduce((sum, system) => sum + system.total, 0),
+    done: systems.reduce((sum, system) => sum + system.done, 0),
+  }));
+}
+
+async function loadDashboardPlan() {
+  const plans = workbookTabs.filter(plan => !plan.isDashboard);
+  const results = await Promise.allSettled(plans.map(async plan => ({
+    plan,
+    systems: await loadProjectPlan(plan.gid, plan.displayName),
+  })));
+  dashboardFailedTabs = results.filter(result => result.status === "rejected").length;
+  const entries = results.filter(result => result.status === "fulfilled").map(result => result.value);
+  if (!entries.length && dashboardFailedTabs) throw new Error("อ่านข้อมูลทุกแท็บไม่สำเร็จ");
+  return combineDashboardSystems(entries);
 }
 
 function planTotals() {
@@ -162,8 +194,8 @@ function planPercent() {
 
 function syncPlanBrief() {
   const focus = [...planSystems].sort((a, b) => (b.total - b.done) - (a.total - a.done))[0];
-  setText("heroFocusLabel", focus ? (focus.total > focus.done ? focus.name : "พัฒนาครบแล้ว") : "กำลังโหลดข้อมูล");
-  setText("heroFocusDetail", focus ? `ยังต้องติดตาม ${focus.total - focus.done}/${focus.total} ข้อ` : "อ่าน Project Plan_ORG");
+  setText("heroFocusLabel", focus ? (focus.total > focus.done ? focus.name : "พัฒนาครบแล้ว") : activePlan?.displayName || "ยังไม่มีข้อมูล");
+  setText("heroFocusDetail", focus ? `ยังต้องติดตาม ${focus.total - focus.done}/${focus.total} ข้อ` : "ยังไม่มีข้อมูลในแท็บนี้");
 }
 
 function planBar(system) {
@@ -178,20 +210,30 @@ function renderProjectPlan() {
   setText("planDone", `${done}/${total}`);
   setText("planPending", `${total - done}/${total}`);
   setText("planDoneRatio", `${percent}% ของรายการที่มีสถานะ`);
-  setText("planPendingRatio", `${100 - percent}% ของรายการที่มีสถานะ`);
-  setText("planMessage", `${activePlan.displayName} · ${total} ข้อที่มีสถานะ`);
-  setText("planSystemCount", `รายการที่มีสถานะ · ${planSystems.length} ระบบ`);
+  setText("planPendingRatio", `${total ? 100 - percent : 0}% ของรายการที่มีสถานะ`);
+  const incomplete = activePlan.isDashboard && dashboardFailedTabs ? ` · อ่านไม่สำเร็จ ${dashboardFailedTabs} แท็บ` : "";
+  setText("planMessage", total ? `${activePlan.displayName} · ${total} ข้อที่มีสถานะ${incomplete}` : `${activePlan.displayName} · ยังไม่มีข้อมูล${incomplete}`);
+  setText("planSystemCount", total ? `รายการที่มีสถานะ · ${planSystems.length} ระบบ` : "ยังไม่มีรายการที่มีสถานะ");
   setText("planDetailsTitle", `รายละเอียด ${planSystems.length} ระบบ`);
-  const pending = planSystems.filter((system) => system.done < system.total);
-  setText("planFocus", pending.length ? pending.map((system) => `${system.name} เหลือ ${system.total - system.done} ข้อ`).join(" · ") : "พัฒนาครบทุกระบบแล้ว");
-  document.getElementById("planTabs").innerHTML = planSystems.map((system) => `<button type="button" data-plan-target="${system.slug}">${system.code} ${escapeHtml(system.name)}</button>`).join("");
-  document.getElementById("planTabs").onclick = (event) => {
+  const planTabs = document.getElementById("planTabs");
+  const detailsSection = document.getElementById("planDetailsSection");
+  planTabs.hidden = activePlan.isDashboard;
+  detailsSection.hidden = activePlan.isDashboard;
+  planTabs.innerHTML = activePlan.isDashboard ? "" : planSystems.map((system) => `<button type="button" data-plan-target="${system.slug}">${system.code} ${escapeHtml(system.name)}</button>`).join("");
+  planTabs.onclick = (event) => {
     const button = event.target.closest("button[data-plan-target]");
     if (!button) return;
     document.getElementById(button.dataset.planTarget).scrollIntoView({ behavior: "smooth", block: "start" });
   };
-  document.getElementById("planRows").innerHTML = planSystems.map((system) => `<article class="project-row"><div class="row-name"><strong>${system.code} ${escapeHtml(system.name)}</strong><small>${system.total} ข้อ</small></div>${planBar(system)}<div class="row-counts"><span class="done-count">${system.done}/${system.total}</span><span class="problem-count">${system.total - system.done}/${system.total}</span><span class="percent">${fmtPercent(system.done, system.total)}%</span></div></article>`).join("");
-  document.getElementById("planDetails").innerHTML = planSystems.map((system) => {
+  const planRows = document.getElementById("planRows");
+  planRows.innerHTML = planSystems.map((system) => activePlan.isDashboard
+    ? `<button type="button" class="project-row dashboard-project-row" data-project-link="${escapeHtml(system.sourcePlanId)}" aria-label="เปิดแท็บ ${escapeHtml(system.name)}"><div class="row-name"><strong>${escapeHtml(system.name)}</strong><small>${system.total} ข้อ · เปิดแท็บ</small></div>${planBar(system)}<div class="row-counts"><span class="done-count">${system.done}/${system.total}</span><span class="problem-count">${system.total - system.done}/${system.total}</span><span class="percent">${fmtPercent(system.done, system.total)}%</span></div></button>`
+    : `<article class="project-row"><div class="row-name"><strong>${system.code} ${escapeHtml(system.name)}</strong><small>${system.total} ข้อ</small></div>${planBar(system)}<div class="row-counts"><span class="done-count">${system.done}/${system.total}</span><span class="problem-count">${system.total - system.done}/${system.total}</span><span class="percent">${fmtPercent(system.done, system.total)}%</span></div></article>`).join("");
+  planRows.onclick = async event => {
+    const row = event.target.closest("button[data-project-link]");
+    if (row) await activateProject(row.dataset.projectLink);
+  };
+  document.getElementById("planDetails").innerHTML = activePlan.isDashboard ? "" : planSystems.map((system) => {
     const counts = countBy(system.items, (item) => item.status);
     const chips = Object.entries(counts).map(([status, count]) => `<span class="status-chip ${DONE_STATUSES.has(status) ? "is-done" : ""}">${escapeHtml(status)} <strong>${count}</strong></span>`).join("");
     const items = system.items.map((item) => `<li><span class="plan-item-code">${escapeHtml(item.code)}</span><span>${escapeHtml(item.title)}</span><span class="status-chip ${DONE_STATUSES.has(item.status) ? "is-done" : ""}">${escapeHtml(item.status)}</span></li>`).join("");

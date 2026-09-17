@@ -7,11 +7,11 @@ const DOCUMENT_EMPTY_STATUS = "ยังไม่ระบุ";
 const REFRESH_INTERVAL_MS = 60_000;
 
 const projectConfig = [
-  { name: "DMS 8095", slug: "dms-8095", accent: "#2f73b7" },
-  { name: "องค์กรนายจ้าง 8096", slug: "employer-8096", accent: "#7c5cc4" },
-  { name: "LCS 8097", slug: "lcs-8097", accent: "#2b8a8a" },
-  { name: "e-payslf 8098", slug: "epayslf-8098", accent: "#c06722" },
-  { name: "ลงพื้นที่ 8099", slug: "field-8099", accent: "#228b57" },
+  { name: "DMS 8095", slug: "dms-8095", accent: "#0b6fb3" },
+  { name: "องค์กรนายจ้าง 8096", slug: "employer-8096", accent: "#168fbd" },
+  { name: "LCS 8097", slug: "lcs-8097", accent: "#2d83c5" },
+  { name: "e-payslf 8098", slug: "epayslf-8098", accent: "#3e75c7" },
+  { name: "ลงพื้นที่ 8099", slug: "field-8099", accent: "#0b9abd" },
 ];
 
 const sheetLinks = {
@@ -50,21 +50,21 @@ const documentWorkstreamConfig = [
     title: "กองเอกสารเซ็นหน้าจอ",
     shortTitle: "เอกสารเซ็นหน้าจอ",
     subtitle: "ข้อ 1 ใช้ติดตามส่งเซ็นหน้าจอ",
-    accent: "#315fba",
+    accent: "#155fb5",
   },
   {
     id: "delivery",
     title: "กองเอกสารส่งงาน",
     shortTitle: "เอกสารส่งงาน",
     subtitle: "ข้อ 2 เป็นต้นไป ใช้ติดตามเอกสารส่งงาน",
-    accent: "#557a95",
+    accent: "#5c93c7",
   },
 ];
 
 const developerRankProfiles = [
-  { title: "สายปิดงานไว", accent: "#f28a20" },
-  { title: "สายเก็บแต้ม", accent: "#2f73b7" },
-  { title: "สายส่งงานเนียน", accent: "#20aa76" },
+  { title: "สายปิดงานไว", accent: "#0b6fb3" },
+  { title: "สายเก็บแต้ม", accent: "#168fbd" },
+  { title: "สายส่งงานเนียน", accent: "#0b9abd" },
 ];
 const DEVELOPER_RANKING_COLLAPSED_KEY = "developerRankingCollapsed";
 
