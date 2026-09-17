@@ -29,45 +29,19 @@
 body[data-page="plan"] .hero-copy { min-width: 0; }
 body[data-page="plan"] h1 { overflow-wrap: anywhere; }
 .view-tabs.plan-source-tabs { width: 140px; max-height: 65vh; overflow-y: auto; }
-.view-tabs.plan-source-tabs a { white-space: normal; overflow-wrap: anywhere; }
-body[data-page="plan"]:has(.plan-source-tabs:not([hidden])) .hero,
-body[data-page="plan"]:has(.plan-source-tabs:not([hidden])) main,
-body[data-page="plan"]:has(.plan-source-tabs:not([hidden])) footer {
+.view-tabs.plan-source-tabs button { white-space: normal; overflow-wrap: anywhere; }
+body[data-page="plan"] .hero,
+body[data-page="plan"] main,
+body[data-page="plan"] footer {
   width: min(1180px, calc(100% - 180px));
   margin-left: max(20px, calc((100% - 1360px) / 2));
 }
-.settings-header { width: min(1180px, calc(100% - 40px)); margin: 40px auto 0; display: flex; align-items: center; justify-content: space-between; gap: 20px; }
-.settings-header h1 { font-size: 34px; margin: 0; }
-.settings-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 420px); gap: 40px; }
-.settings-layout h2 { font-size: 24px; }
-.settings-link { color: #205f99; font-weight: 700; }
-.settings-button { border: 1px solid #bdcad5; border-radius: 6px; background: white; color: var(--ink); padding: 9px 13px; cursor: pointer; font: inherit; }
-.settings-button:hover { background: #edf4f8; }
-.settings-button:disabled { opacity: .45; cursor: not-allowed; }
-.settings-button.primary { background: #126c53; border-color: #126c53; color: white; }
-.settings-row { display: flex; justify-content: space-between; align-items: center; gap: 14px; padding: 20px 0; border-bottom: 1px solid var(--line); }
-.settings-row > div:first-child { min-width: 0; overflow-wrap: anywhere; }
-.settings-row strong { display: block; margin-bottom: 8px; }
-.settings-row small { color: var(--muted); margin-right: 16px; }
-.settings-row a { color: #205f99; }
-.settings-row-actions, .settings-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-.settings-editor { border-left: 1px solid var(--line); padding-left: 30px; }
-#planForm { display: grid; gap: 14px; margin-top: 24px; }
-#planForm > label { font-weight: 700; }
-#planForm input:not([type="checkbox"]) { width: 100%; min-width: 0; font: inherit; padding: 12px; border: 1px solid #adbdcc; border-radius: 6px; background: white; color: var(--ink); }
-.checkbox-label { display: flex; gap: 8px; align-items: center; }
-.checkbox-label input { width: 18px; height: 18px; accent-color: #126c53; }
-#planPreview { color: #28475b; line-height: 1.7; overflow-wrap: anywhere; }
-#settingsMessage { color: #38576b; }
 @media (max-width: 760px) {
-  .settings-layout { grid-template-columns: minmax(0, 1fr); }
-  .settings-editor { padding: 24px 0 0; border-left: 0; border-top: 1px solid var(--line); }
-  .settings-row { flex-direction: column; align-items: start; }
-  body[data-page="plan"]:has(.plan-source-tabs:not([hidden])) .hero,
-  body[data-page="plan"]:has(.plan-source-tabs:not([hidden])) main,
-  body[data-page="plan"]:has(.plan-source-tabs:not([hidden])) footer { width: calc(100% - 20px); margin-inline: auto; }
+  body[data-page="plan"] .hero,
+  body[data-page="plan"] main,
+  body[data-page="plan"] footer { width: calc(100% - 20px); margin-inline: auto; }
   .view-tabs.plan-source-tabs { position: static; width: 100%; flex-direction: row; overflow-x: auto; max-height: none; margin-bottom: 20px; border: 1px solid var(--line); border-radius: 8px; padding: 6px; }
-  .view-tabs.plan-source-tabs a { min-width: 120px; border-radius: 6px; }
+  .view-tabs.plan-source-tabs button { min-width: 120px; border-radius: 6px; }
 }
 
 body {

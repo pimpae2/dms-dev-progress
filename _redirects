@@ -1,4 +1,6 @@
-/project_plan /project_plan.html 200
-/set_plan_sheet /set_plan_sheet.html 200
-/project_plan_org /project_plan 301
-/project_plan_org.html /project_plan 301
+/home /home.html 200
+/project_plan / 301
+/project_plan.html / 301
+/project_plan_org / 301
+/project_plan_org.html / 301
+/set_plan_sheet / 301

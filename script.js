@@ -840,8 +840,8 @@ async function refreshDashboard() {
 if (document.body.dataset.page === "plan") {
   setActiveView("plan");
   initProjectPlans();
-  setInterval(refreshProjectPlan, REFRESH_INTERVAL_MS);
-} else if (document.body.dataset.page !== "plan-settings") {
+  setInterval(initProjectPlans, REFRESH_INTERVAL_MS);
+} else {
   initViewTabs();
   initDeveloperRankingToggle();
   refreshDashboard();

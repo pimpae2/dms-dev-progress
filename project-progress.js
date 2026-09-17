@@ -1,38 +1,73 @@
 let planSystems = [];
+let workbookTabs = [];
 let activePlan = null;
 let planRequest = 0;
 
+function projectDisplayName(name) {
+  return String(name || "").replace(/^Project\s*Plan[_\s-]*/i, "").trim() || String(name || "Project Progress");
+}
+
+async function loadWorkbookTabs() {
+  const response = await fetch("/api/workbook", { cache: "no-store", signal: AbortSignal.timeout(25000) });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok || !Array.isArray(result.tabs)) throw new Error(result.error || "อ่านรายชื่อโปรเจกต์ไม่สำเร็จ");
+  return result.tabs.map(tab => ({ ...tab, id: tab.gid, displayName: projectDisplayName(tab.name) }));
+}
+
+function renderProjectSourceTabs() {
+  const tabs = document.getElementById("planSourceTabs");
+  tabs.innerHTML = workbookTabs.map(plan => `<button type="button" data-project-gid="${plan.gid}" ${activePlan?.gid === plan.gid ? 'class="is-active" aria-current="page"' : ""}>${escapeHtml(plan.displayName)}</button>`).join("");
+}
+
+function showNoProject(message) {
+  setText("planMessage", message);
+  setText("heroFocusLabel", "ยังไม่มีข้อมูล");
+  setText("heroFocusDetail", "เพิ่มแท็บใน Google Sheet เพื่อแสดงโปรเจกต์");
+  setText("heroSubtitle", "ยังไม่พบแท็บโปรเจกต์ที่เปิดอ่านได้");
+  setText("planFocus", "ยังไม่มีข้อมูล");
+  setText("planDoneRatio", "ยังไม่มีข้อมูล");
+  setText("planPendingRatio", "ยังไม่มีข้อมูล");
+  document.querySelector(".updated").textContent = "ยังไม่มีโปรเจกต์ที่เลือก";
+}
+
 async function initProjectPlans() {
   try {
-    const config = await readPlanConfig();
-    const plans = config.plans.filter(plan => plan.enabled);
-    const requested = new URLSearchParams(location.search).get("plan");
-    activePlan = plans.find(plan => plan.id === requested) || (!requested ? plans[0] : null);
-    const tabs = document.getElementById("planSourceTabs");
-    tabs.hidden = plans.length < 2;
-    tabs.innerHTML = plans.map(plan => `<a href="/project_plan?plan=${encodeURIComponent(plan.id)}" ${activePlan?.id === plan.id ? 'class="is-active" aria-current="page"' : ''}>${escapeHtml(plan.name)}</a>`).join("");
+    workbookTabs = await loadWorkbookTabs();
+    const requested = new URLSearchParams(location.search).get("project");
+    activePlan = workbookTabs.find(plan => plan.gid === requested)
+      || workbookTabs.find(plan => plan.gid === activePlan?.gid)
+      || workbookTabs[0]
+      || null;
+    if (requested && activePlan && activePlan.gid !== requested) history.replaceState(null, "", `/?project=${encodeURIComponent(activePlan.gid)}`);
+    renderProjectSourceTabs();
     if (!activePlan) {
-      setText("planMessage", requested ? "ไม่พบชุดข้อมูลนี้ หรือถูกปิดการแสดง" : "ยังไม่มีชุดข้อมูลที่เปิดแสดง เพิ่มได้ที่หน้าตั้งค่า");
-      setText("heroFocusLabel", "ยังไม่มีข้อมูล");
-      setText("heroFocusDetail", "เลือกหรือเพิ่มชุดข้อมูลที่หน้าตั้งค่า");
-      setText("heroSubtitle", "เลือกชุดข้อมูลเพื่อดูความคืบหน้าโครงการ");
-      setText("planFocus", "ยังไม่มีข้อมูล");
-      setText("planDoneRatio", "ยังไม่มีข้อมูล");
-      setText("planPendingRatio", "ยังไม่มีข้อมูล");
-      document.querySelector(".updated").textContent = "ยังไม่มีชุดข้อมูลที่เลือก";
+      showNoProject("ยังไม่พบแท็บใน Google Sheet");
       return;
     }
-    document.querySelector(".hero h1").textContent = activePlan.name;
+    document.querySelector(".hero h1").textContent = activePlan.displayName;
     setText("heroSubtitle", "Project Progress · นับเฉพาะข้อที่มีสถานะ · Developed และ Tested ถือว่าพัฒนาแล้ว");
     await refreshProjectPlan();
   } catch (error) { setText("planMessage", error.message); }
 }
 
+document.getElementById("planSourceTabs")?.addEventListener("click", async event => {
+  const button = event.target.closest("button[data-project-gid]");
+  if (!button || button.dataset.projectGid === activePlan?.gid) return;
+  activePlan = workbookTabs.find(plan => plan.gid === button.dataset.projectGid) || null;
+  if (!activePlan) return;
+  planSystems = [];
+  renderProjectSourceTabs();
+  document.querySelector(".hero h1").textContent = activePlan.displayName;
+  history.replaceState(null, "", `/?project=${encodeURIComponent(activePlan.gid)}`);
+  setText("planMessage", `กำลังอ่าน ${activePlan.displayName}`);
+  await refreshProjectPlan();
+});
+
 async function refreshProjectPlan() {
   if (!activePlan) return;
   const request = ++planRequest;
   try {
-    const systems = await loadProjectPlan(activePlan.url);
+    const systems = await loadProjectPlan(activePlan.gid);
     if (request !== planRequest) return;
     planSystems = systems;
     renderProjectPlan();
@@ -47,17 +82,19 @@ async function refreshProjectPlan() {
   }
 }
 
-function parseProjectPlan(rows) {
+function parseProjectPlan(rows, fallbackName = activePlan?.displayName || "Project") {
   rows = rows.map(row => row.map(cell => String(cell ?? "").trim()));
-  const headerIndex = rows.findIndex((row) => row.includes("คำอธิบาย") && row.includes("สถานะ"));
-  if (headerIndex < 0) throw new Error("ไม่พบคอลัมน์คำอธิบายและสถานะ");
+  const titleHeaders = ["คำอธิบาย", "หน้าจอ/เมนู/หัวข้อ"];
+  const headerIndex = rows.findIndex((row) => titleHeaders.some(header => row.includes(header)) && row.includes("สถานะ"));
+  if (headerIndex < 0) throw new Error("ไม่พบคอลัมน์หน้าจอ/เมนู/หัวข้อและสถานะ");
   const headers = rows[headerIndex];
-  const titleIndex = headers.indexOf("คำอธิบาย");
+  const titleIndex = titleHeaders.map(header => headers.indexOf(header)).find(index => index >= 0);
   const statusIndex = headers.indexOf("สถานะ");
   const codeIndex = titleIndex - 1;
   const palette = ["#7c5cc4", "#c06722", "#228b57", "#2f73b7", "#2b8a8a"];
   const systems = [];
   let current = null;
+  let fallback = null;
   for (const row of rows.slice(headerIndex + 1)) {
     const code = String(row[codeIndex] || "").trim();
     const title = String(row[titleIndex] || "").trim();
@@ -68,8 +105,13 @@ function parseProjectPlan(rows) {
       continue;
     }
     if (!title || !status || !code || !/^\d+(?:\.\d+)*$/.test(code)) continue;
-    const system = [...systems].reverse().find(item => code.startsWith(`${item.code}.`)) || current;
-    if (!system) throw new Error(`ข้อ ${code} ไม่มีหัวข้อระบบ กรุณาตรวจรูปแบบชีต`);
+    let system = [...systems].reverse().find(item => item.code && code.startsWith(`${item.code}.`)) || current;
+    if (!system) {
+      fallback = { code: "", name: fallbackName, accent: palette[0], slug: "plan-group-0", items: [] };
+      systems.push(fallback);
+      system = fallback;
+      current = fallback;
+    }
     system.items.push({ code, title, status });
   }
   if (!systems.some((system) => system.items.length)) throw new Error("ไม่พบข้อที่มีสถานะใต้หัวข้อระบบ");
@@ -80,12 +122,11 @@ function parseProjectPlan(rows) {
   }));
 }
 
-async function loadProjectPlan(link) {
-  const { spreadsheetId, gid } = parseSheetLink(link);
+async function loadProjectPlan(gid) {
   if (location.protocol === "file:") throw new Error("กรุณาเปิดหน้านี้ผ่านเว็บ Netlify หรือ localhost ไม่ใช่เปิดไฟล์ HTML โดยตรง");
   let response;
   try {
-    response = await fetch(`/api/sheet?id=${encodeURIComponent(spreadsheetId)}&gid=${encodeURIComponent(gid)}`, { cache: "no-store", signal: AbortSignal.timeout(20000) });
+    response = await fetch(`/api/sheet?gid=${encodeURIComponent(gid)}`, { cache: "no-store", signal: AbortSignal.timeout(20000) });
   } catch {
     throw new Error("เชื่อมต่อบริการอ่านชีตไม่ได้ กรุณาตรวจอินเทอร์เน็ตและเปิดหน้าเว็บใหม่");
   }
@@ -125,7 +166,7 @@ function renderProjectPlan() {
   setText("planPending", `${total - done}/${total}`);
   setText("planDoneRatio", `${percent}% ของรายการที่มีสถานะ`);
   setText("planPendingRatio", `${100 - percent}% ของรายการที่มีสถานะ`);
-  setText("planMessage", `${activePlan.name} · ${total} ข้อที่มีสถานะ`);
+  setText("planMessage", `${activePlan.displayName} · ${total} ข้อที่มีสถานะ`);
   setText("planSystemCount", `รายการที่มีสถานะ · ${planSystems.length} ระบบ`);
   setText("planDetailsTitle", `รายละเอียด ${planSystems.length} ระบบ`);
   const pending = planSystems.filter((system) => system.done < system.total);
