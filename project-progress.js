@@ -2,16 +2,29 @@ let planSystems = [];
 let workbookTabs = [];
 let activePlan = null;
 let planRequest = 0;
+const PROJECT_WORKBOOK_ID = "1Hi1M7GNhA5G2p7BgiGLH3F5A3aKgO2A-iU46XGOvFC8";
 
 function projectDisplayName(name) {
   return String(name || "").replace(/^Project\s*Plan[_\s-]*/i, "").trim() || String(name || "Project Progress");
 }
 
+function parseWorkbookTabsHtml(html) {
+  const tabs = [];
+  const pattern = /items\.push\(\{name:\s*"((?:\\.|[^"\\])*)",[\s\S]*?gid:\s*"(-?\d+)"/g;
+  for (const match of html.matchAll(pattern)) {
+    const name = JSON.parse(`"${match[1]}"`);
+    if (!tabs.some(tab => tab.id === match[2])) tabs.push({ id: match[2], gid: match[2], name, displayName: projectDisplayName(name) });
+  }
+  if (!tabs.length) throw new Error("ไม่พบแท็บโปรเจกต์ที่เปิดอ่านได้");
+  return tabs;
+}
+
 async function loadWorkbookTabs() {
-  const response = await fetch("/api/workbook", { cache: "no-store", signal: AbortSignal.timeout(25000) });
-  const result = await response.json().catch(() => ({}));
-  if (!response.ok || !Array.isArray(result.tabs)) throw new Error(result.error || "อ่านรายชื่อโปรเจกต์ไม่สำเร็จ");
-  return result.tabs.map(tab => ({ ...tab, id: tab.id || tab.name, displayName: projectDisplayName(tab.name) }));
+  const response = await fetch(`https://docs.google.com/spreadsheets/d/${PROJECT_WORKBOOK_ID}/htmlview`, {
+    cache: "no-store", credentials: "omit", signal: AbortSignal.timeout(25000),
+  });
+  if (!response.ok) throw new Error("อ่านรายชื่อโปรเจกต์ไม่สำเร็จ กรุณาตรวจสิทธิ์ Google Sheet");
+  return parseWorkbookTabsHtml(await response.text());
 }
 
 function renderProjectSourceTabs() {
@@ -67,7 +80,7 @@ async function refreshProjectPlan() {
   if (!activePlan) return;
   const request = ++planRequest;
   try {
-    const systems = await loadProjectPlan(activePlan.id);
+    const systems = await loadProjectPlan(activePlan.gid);
     if (request !== planRequest) return;
     planSystems = systems;
     renderProjectPlan();
@@ -122,21 +135,20 @@ function parseProjectPlan(rows, fallbackName = activePlan?.displayName || "Proje
   }));
 }
 
-async function loadProjectPlan(name) {
+async function loadProjectPlan(gid) {
   if (location.protocol === "file:") throw new Error("กรุณาเปิดหน้านี้ผ่านเว็บ Netlify หรือ localhost ไม่ใช่เปิดไฟล์ HTML โดยตรง");
   let response;
   try {
-    response = await fetch(`/api/sheet?name=${encodeURIComponent(name)}`, { cache: "no-store", signal: AbortSignal.timeout(25000) });
+    response = await fetch(`https://docs.google.com/spreadsheets/d/${PROJECT_WORKBOOK_ID}/gviz/tq?tqx=out:csv&gid=${encodeURIComponent(gid)}`, {
+      cache: "no-store", credentials: "omit", signal: AbortSignal.timeout(25000),
+    });
   } catch {
     throw new Error("เชื่อมต่อบริการอ่านชีตไม่ได้ กรุณาตรวจอินเทอร์เน็ตและเปิดหน้าเว็บใหม่");
   }
   if (!response.ok) {
-    const result = await response.json().catch(() => ({}));
-    throw new Error(result.error || "ไม่พบบริการอ่านชีต กรุณา Deploy พร้อม Netlify Functions หรือเริ่มเซิร์ฟเวอร์ใหม่");
+    throw new Error("อ่านข้อมูลแท็บนี้ไม่สำเร็จ กรุณาตรวจสิทธิ์ Google Sheet");
   }
-  const result = await response.json().catch(() => ({}));
-  if (!Array.isArray(result.rows)) throw new Error("รูปแบบข้อมูลจากบริการอ่านชีตไม่ถูกต้อง");
-  return parseProjectPlan(result.rows);
+  return parseProjectPlan(parseCsv(await response.text()));
 }
 
 function planTotals() {

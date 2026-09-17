@@ -2,8 +2,6 @@ import http from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { dirname, join, extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { readSheet } from './netlify/sheet-handler.mjs';
-import { readWorkbook } from './netlify/workbook-handler.mjs';
 
 const root = dirname(fileURLToPath(import.meta.url));
 const port = Number(process.env.PORT || 4175);
@@ -16,16 +14,6 @@ function send(res, status, data) {
 http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url, `http://127.0.0.1:${port}`);
-    if (url.pathname === '/api/sheet') {
-      const response = await readSheet(new Request(url, { method: req.method }));
-      res.writeHead(response.status, Object.fromEntries(response.headers));
-      return res.end(Buffer.from(await response.arrayBuffer()));
-    }
-    if (url.pathname === '/api/workbook') {
-      const response = await readWorkbook(new Request(url, { method: req.method }));
-      res.writeHead(response.status, Object.fromEntries(response.headers));
-      return res.end(Buffer.from(await response.arrayBuffer()));
-    }
     if (!['GET', 'HEAD'].includes(req.method)) return send(res, 405, { error: 'Method not allowed' });
     if (['/project_plan', '/project_plan.html', '/project_plan_org', '/project_plan_org.html', '/set_plan_sheet'].includes(url.pathname)) {
       res.writeHead(302, { Location: `/${url.search}` }); return res.end();

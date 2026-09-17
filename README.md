@@ -15,11 +15,9 @@ the item number. Numbered rows without a status create system groups; flat tabs
 without group rows are shown as one group. `Developed` and `Tested` count as
 complete. Rows without a status are not counted.
 
-The workbook must be readable by anyone with the link. The Netlify Functions
-proxy is restricted to this workbook and exposes read-only GET endpoints:
-
-- `/api/workbook` lists visible tabs.
-- `/api/sheet?name=<tab-name>` returns one tab as JSON.
+The workbook must be readable by anyone with the link. The browser reads the
+workbook's public tab metadata and CSV data directly from Google in read-only
+mode; the site has no write endpoint or server-side storage.
 
 Run locally with Node.js 22 or newer:
 
@@ -33,6 +31,6 @@ Build the Netlify output with:
 npm run build
 ```
 
-`netlify.toml` publishes `dist` and deploys the read-only Functions. No
+`netlify.toml` publishes `dist` as a static site. No
 environment variables, Apps Script deployment, administrator token, or storage
 service is required.

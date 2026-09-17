@@ -3,13 +3,22 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import vm from 'node:vm';
 
-const source = `${await readFile(new URL('../project-progress.js', import.meta.url), 'utf8')}\nglobalThis.parseProjectPlanForTest = parseProjectPlan;`;
+const source = `${await readFile(new URL('../project-progress.js', import.meta.url), 'utf8')}\nglobalThis.parseProjectPlanForTest = parseProjectPlan; globalThis.parseWorkbookTabsForTest = parseWorkbookTabsHtml;`;
 const context = {
   DONE_STATUSES: new Set(['Developed', 'Tested']),
   document: { getElementById: () => null },
   console,
 };
 vm.runInNewContext(source, context);
+
+test('discovers all workbook tabs in their displayed order', () => {
+  const result = context.parseWorkbookTabsForTest(`<script>
+    items.push({name: "องค์กรนายจ้าง", pageUrl: "x", gid: "1021126458"});
+    items.push({name: "DMS", pageUrl: "x", gid: "2001193771"});
+  </script>`);
+  assert.deepEqual(Array.from(result, tab => tab.name), ['องค์กรนายจ้าง', 'DMS']);
+  assert.deepEqual(Array.from(result, tab => tab.gid), ['1021126458', '2001193771']);
+});
 
 test('parses hierarchical project tabs', () => {
   const result = context.parseProjectPlanForTest([
