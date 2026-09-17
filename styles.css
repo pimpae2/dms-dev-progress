@@ -28,7 +28,13 @@
 .view-tabs[hidden] { display: none; }
 body[data-page="plan"] .hero-copy { min-width: 0; }
 body[data-page="plan"] h1 { overflow-wrap: anywhere; }
-.view-tabs.plan-source-tabs { width: 140px; max-height: 65vh; overflow-y: auto; }
+.view-tabs.plan-source-tabs {
+  top: 28px;
+  right: max(0px, calc((100vw - 1360px) / 2));
+  width: 140px;
+  max-height: 65vh;
+  overflow-y: auto;
+}
 .view-tabs.plan-source-tabs button { white-space: normal; overflow-wrap: anywhere; }
 body[data-page="plan"] .hero,
 body[data-page="plan"] main,
