@@ -17,8 +17,8 @@ test('parses visible tabs in workbook order', () => {
 test('returns workbook metadata from the fixed read-only source', async () => {
   const response = await readWorkbook(new Request('https://example.test/api/workbook'), async (url, options) => {
     assert.equal(url, `https://docs.google.com/spreadsheets/d/${PROJECT_WORKBOOK_ID}/htmlview`);
-    assert.equal(options.headers.Accept, 'text/html');
-    return new Response(html);
+    assert.equal(options.accept, 'text/html');
+    return { ok: true, status: 200, contentType: 'text/html', text: html };
   });
   assert.equal(response.status, 200);
   assert.equal((await response.json()).tabs.length, 2);
@@ -26,5 +26,5 @@ test('returns workbook metadata from the fixed read-only source', async () => {
 
 test('rejects writes and malformed metadata', async () => {
   assert.equal((await readWorkbook(new Request('https://example.test/api/workbook', { method: 'POST' }))).status, 405);
-  assert.equal((await readWorkbook(new Request('https://example.test/api/workbook'), async () => new Response('<html></html>'))).status, 502);
+  assert.equal((await readWorkbook(new Request('https://example.test/api/workbook'), async () => ({ ok: true, status: 200, contentType: 'text/html', text: '<html></html>' }))).status, 502);
 });

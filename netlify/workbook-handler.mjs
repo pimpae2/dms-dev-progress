@@ -1,3 +1,5 @@
+import { readGoogleText } from './google-read.mjs';
+
 export const PROJECT_WORKBOOK_ID = '1Hi1M7GNhA5G2p7BgiGLH3F5A3aKgO2A-iU46XGOvFC8';
 
 function decodeGoogleString(value) {
@@ -15,17 +17,13 @@ export function parseWorkbookTabs(html) {
   return tabs;
 }
 
-export async function readWorkbook(request, fetchImpl = fetch) {
+export async function readWorkbook(request, readText = readGoogleText) {
   const json = (status, data) => Response.json(data, { status, headers: { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' } });
   if (request.method !== 'GET') return json(405, { error: 'Method not allowed' });
   try {
-    const response = await fetchImpl(`https://docs.google.com/spreadsheets/d/${PROJECT_WORKBOOK_ID}/htmlview`, {
-      headers: { Accept: 'text/html' }, signal: AbortSignal.timeout(20000),
-    });
+    const response = await readText(`https://docs.google.com/spreadsheets/d/${PROJECT_WORKBOOK_ID}/htmlview`, { accept: 'text/html' });
     if (!response.ok) return json(502, { error: 'อ่านรายชื่อแท็บไม่ได้ กรุณาตรวจสิทธิ์ของ Google Sheet' });
-    const html = await response.text();
-    if (html.length > 2 * 1024 * 1024) return json(413, { error: 'ข้อมูลรายชื่อแท็บใหญ่เกินไป' });
-    return json(200, { spreadsheetId: PROJECT_WORKBOOK_ID, tabs: parseWorkbookTabs(html) });
+    return json(200, { spreadsheetId: PROJECT_WORKBOOK_ID, tabs: parseWorkbookTabs(response.text) });
   } catch (error) {
     console.error('Workbook metadata failed:', error?.name, error?.message);
     return json(502, { error: 'เชื่อมต่อรายการแท็บ Google Sheet ไม่สำเร็จ' });
