@@ -1,0 +1,11 @@
+{
+  "revision": 3,
+  "plans": [
+    {
+      "id": "org",
+      "name": "โครงการ ORG",
+      "enabled": true,
+      "url": "https://docs.google.com/spreadsheets/d/1vAv6UKV57NoRlDG5a0tL88AI0qfGIcDWr74FLOm8cfA/edit?gid=1021126458#gid=1021126458"
+    }
+  ]
+}

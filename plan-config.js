@@ -11,7 +11,17 @@ function parseSheetLink(value) {
 
 async function readPlanConfig() {
   const response = await fetch("/api/plans", { cache: "no-store" });
-  if (!response.ok) throw new Error("อ่านค่าตั้งค่าไม่สำเร็จ กรุณาเปิดเว็บผ่านเซิร์ฟเวอร์ Project Progress");
+  const isHtml = (response.headers.get("content-type") || "").includes("text/html");
+  if (response.status === 404 || response.status === 405 || (response.ok && isHtml)) {
+    const published = await fetch("/plans-public.json", { cache: "no-store" });
+    if (!published.ok || !(published.headers.get("content-type") || "").includes("application/json")) {
+      throw new Error("ไม่พบรายการชีตที่เผยแพร่ กรุณาอัปโหลดไฟล์ในโฟลเดอร์ dist ไปยัง Netlify อีกครั้ง");
+    }
+    const config = await published.json();
+    if (!Array.isArray(config.plans)) throw new Error("ข้อมูลการตั้งค่าไม่ถูกต้อง");
+    return { ...config, readOnly: true };
+  }
+  if (!response.ok) throw new Error(`อ่านค่าตั้งค่าไม่สำเร็จ (${response.status})`);
   const config = await response.json();
   if (!Array.isArray(config.plans)) throw new Error("ข้อมูลการตั้งค่าไม่ถูกต้อง");
   return config;
@@ -21,6 +31,9 @@ async function savePlanConfig(config) {
   const response = await fetch("/api/plans", {
     method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(config),
   });
+  if (!(response.headers.get("content-type") || "").includes("application/json")) {
+    throw new Error("เว็บนี้ยังไม่มีบริการบันทึกค่าตั้งค่า กรุณาแก้ไขในเครื่องแล้วเผยแพร่ใหม่");
+  }
   const result = await response.json();
   if (!response.ok) throw new Error(result.error || "บันทึกไม่สำเร็จ");
   return result;

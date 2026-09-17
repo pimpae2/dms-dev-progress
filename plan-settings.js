@@ -24,7 +24,7 @@ function renderSettingsList() {
 }
 
 async function persistSettings(plans) {
-  if (settingsBusy) return false;
+  if (settingsBusy || settingsConfig?.readOnly) return false;
   settingsBusy = true;
   saveButton.disabled = true;
   try {
@@ -98,4 +98,13 @@ document.getElementById("settingsList").onclick = async event => {
 };
 document.getElementById("newPlan").onclick = () => { resetPlanForm(); nameInput.focus(); };
 document.getElementById("cancelPlan").onclick = resetPlanForm;
-readPlanConfig().then(config => { settingsConfig = config; renderSettingsList(); setText("settingsMessage", `${config.plans.length} ชุดข้อมูล`); }).catch(error => setText("settingsMessage", error.message));
+readPlanConfig().then(config => {
+  settingsConfig = config;
+  renderSettingsList();
+  setText("settingsMessage", config.readOnly
+    ? "รายการที่เผยแพร่ (อ่านอย่างเดียว) · แก้ไขค่าตั้งค่าในเครื่องแล้วเผยแพร่ใหม่ เพื่อให้ทุกคนเห็นตรงกัน"
+    : `${config.plans.length} ชุดข้อมูล`);
+  if (config.readOnly) {
+    document.querySelectorAll("#settingsList button, #planForm input, #planForm button, #newPlan").forEach(element => { element.disabled = true; });
+  }
+}).catch(error => setText("settingsMessage", error.message));
