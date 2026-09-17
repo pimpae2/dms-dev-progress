@@ -11,6 +11,12 @@
     <section aria-labelledby="sourcesTitle">
       <div class="section-head"><h2 id="sourcesTitle">ชุดข้อมูล</h2><button type="button" id="newPlan" class="settings-button">+ เพิ่มชุดข้อมูล</button></div>
       <p id="settingsMessage" role="status" aria-live="polite">กำลังอ่านค่าตั้งค่า</p>
+      <form id="adminLogin" hidden>
+        <label for="adminToken">รหัสผู้ดูแล</label>
+        <input id="adminToken" type="password" autocomplete="current-password" required>
+        <button class="settings-button" type="submit">เข้าสู่ระบบ</button>
+      </form>
+      <button id="adminLogout" class="settings-button" type="button" hidden>ออกจากระบบ</button>
       <div id="settingsList"></div>
     </section>
     <section class="settings-editor" aria-labelledby="editorTitle">

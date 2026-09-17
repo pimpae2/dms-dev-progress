@@ -98,13 +98,27 @@ document.getElementById("settingsList").onclick = async event => {
 };
 document.getElementById("newPlan").onclick = () => { resetPlanForm(); nameInput.focus(); };
 document.getElementById("cancelPlan").onclick = resetPlanForm;
-readPlanConfig().then(config => {
+function applySettingsConfig(config) {
   settingsConfig = config;
   renderSettingsList();
-  setText("settingsMessage", config.readOnly
-    ? "รายการที่เผยแพร่ (อ่านอย่างเดียว) · แก้ไขค่าตั้งค่าในเครื่องแล้วเผยแพร่ใหม่ เพื่อให้ทุกคนเห็นตรงกัน"
+  setText("settingsMessage", config.setupRequired
+    ? "กรุณาตั้งค่า PLAN_ADMIN_TOKEN บน Netlify แล้ว Deploy ใหม่"
+    : config.requiresAuth ? "เข้าสู่ระบบเพื่อเพิ่มหรือแก้ไขชุดข้อมูล"
+    : config.readOnly ? "ยังไม่มีบริการบันทึก กรุณา Deploy ผ่าน Git หรือ Netlify CLI พร้อม Functions"
     : `${config.plans.length} ชุดข้อมูล`);
-  if (config.readOnly) {
-    document.querySelectorAll("#settingsList button, #planForm input, #planForm button, #newPlan").forEach(element => { element.disabled = true; });
-  }
-}).catch(error => setText("settingsMessage", error.message));
+  document.getElementById("adminLogin").hidden = !config.requiresAuth;
+  document.getElementById("adminLogout").hidden = !planAdminToken;
+  document.querySelectorAll("#planForm input, #planForm button, #newPlan").forEach(element => { element.disabled = Boolean(config.readOnly); });
+  if (config.readOnly) document.querySelectorAll("#settingsList button").forEach(element => { element.disabled = true; });
+  saveButton.disabled = true;
+}
+document.getElementById("adminLogin").onsubmit = async event => {
+  event.preventDefault();
+  planAdminToken = document.getElementById("adminToken").value;
+  try {
+    applySettingsConfig(await readPlanConfig());
+    document.getElementById("adminToken").value = "";
+  } catch (error) { planAdminToken = ""; setText("settingsMessage", error.message); }
+};
+document.getElementById("adminLogout").onclick = () => location.reload();
+readPlanConfig().then(applySettingsConfig).catch(error => setText("settingsMessage", error.message));

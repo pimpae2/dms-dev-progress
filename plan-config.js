@@ -9,8 +9,10 @@ function parseSheetLink(value) {
   return { spreadsheetId: match[1], gid, url: `https://docs.google.com/spreadsheets/d/${match[1]}/edit?gid=${gid}#gid=${gid}` };
 }
 
+let planAdminToken = "";
+
 async function readPlanConfig() {
-  const response = await fetch("/api/plans", { cache: "no-store" });
+  const response = await fetch("/api/plans", { cache: "no-store", headers: planAdminToken ? { Authorization: `Bearer ${planAdminToken}` } : {} });
   const isHtml = (response.headers.get("content-type") || "").includes("text/html");
   if (response.status === 404 || response.status === 405 || (response.ok && isHtml)) {
     const published = await fetch("/plans-public.json", { cache: "no-store" });
@@ -21,7 +23,7 @@ async function readPlanConfig() {
     if (!Array.isArray(config.plans)) throw new Error("ข้อมูลการตั้งค่าไม่ถูกต้อง");
     return { ...config, readOnly: true };
   }
-  if (!response.ok) throw new Error(`อ่านค่าตั้งค่าไม่สำเร็จ (${response.status})`);
+  if (!response.ok) throw new Error(response.status === 401 ? "รหัสผู้ดูแลไม่ถูกต้อง" : `อ่านค่าตั้งค่าไม่สำเร็จ (${response.status})`);
   const config = await response.json();
   if (!Array.isArray(config.plans)) throw new Error("ข้อมูลการตั้งค่าไม่ถูกต้อง");
   return config;
@@ -29,7 +31,7 @@ async function readPlanConfig() {
 
 async function savePlanConfig(config) {
   const response = await fetch("/api/plans", {
-    method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(config),
+    method: "PUT", headers: { "Content-Type": "application/json", ...(planAdminToken ? { Authorization: `Bearer ${planAdminToken}` } : {}) }, body: JSON.stringify(config),
   });
   if (!(response.headers.get("content-type") || "").includes("application/json")) {
     throw new Error("เว็บนี้ยังไม่มีบริการบันทึกค่าตั้งค่า กรุณาแก้ไขในเครื่องแล้วเผยแพร่ใหม่");
