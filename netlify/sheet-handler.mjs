@@ -13,20 +13,15 @@ export async function readSheet(request, fetchImpl = fetch) {
     if (!response.ok || !response.headers.get('content-type')?.includes('text/csv')) {
       return json(502, 'อ่านชีตไม่ได้ กรุณาตรวจลิงก์และสิทธิ์การอ่านชีตงาน');
     }
-    const reader = response.body.getReader();
-    const chunks = [];
-    let size = 0;
-    for (;;) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      size += value.byteLength;
-      if (size > 2 * 1024 * 1024) { await reader.cancel(); return json(413, 'ข้อมูลชีตใหญ่เกิน 2 MB'); }
-      chunks.push(value);
-    }
-    return new Response(Buffer.concat(chunks), { headers: {
+    const contentLength = Number(response.headers.get('content-length') || 0);
+    if (contentLength > 2 * 1024 * 1024) return json(413, 'ข้อมูลชีตใหญ่เกิน 2 MB');
+    const data = await response.arrayBuffer();
+    if (data.byteLength > 2 * 1024 * 1024) return json(413, 'ข้อมูลชีตใหญ่เกิน 2 MB');
+    return new Response(data, { headers: {
       'Content-Type': 'text/csv; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff',
     } });
-  } catch {
+  } catch (error) {
+    console.error('Sheet proxy failed:', error?.name, error?.message);
     return json(502, 'เชื่อมต่อ Google Sheet ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
   }
 }
