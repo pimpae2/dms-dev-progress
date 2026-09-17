@@ -56,11 +56,11 @@ export function createPlansHandler({ store, secret, seed }) {
       let plans;
       try { plans = validatePlans(input.plans); }
       catch (error) { return json(400, { error: error.message }); }
-      const next = { revision: current.revision + 1, plans };
+      const next = { revision: typeof current.revision === 'number' ? current.revision + 1 : current.revision, plans };
       // Conditional replacement prevents a stale settings page overwriting another save.
       const result = await store.setJSON('config', next, stored ? { onlyIfMatch: stored.etag } : { onlyIfNew: true });
       if (!result.modified) return json(409, { error: 'มีการแก้ไขจากหน้าอื่น กรุณาโหลดหน้าใหม่ก่อนบันทึก' });
-      return json(200, next);
+      return json(200, result.data || next);
     } catch {
       return json(503, { error: 'บริการจัดเก็บไม่พร้อมใช้งาน กรุณาลองใหม่อีกครั้ง' });
     }

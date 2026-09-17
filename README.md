@@ -32,6 +32,7 @@ Set the `PORT` environment variable to use another local port.
 1. Deploy this repository through Netlify's Git integration (Node 22). The build
    command and Functions directory are configured in `netlify.toml`.
 2. In Netlify Project configuration > Environment variables, add
+   `GOOGLE_PLAN_SCRIPT_TOKEN` equal to the Apps Script `API_TOKEN`, and
    `PLAN_ADMIN_TOKEN` with a long, randomly generated password (at least 32
    characters). Make it available to Functions, then redeploy. Never commit it.
 3. Open `/set_plan_sheet`, enter that password, check the sheet, then save.
@@ -42,16 +43,25 @@ For CLI deployment of an existing site, run `npm ci`, `npx netlify login`,
 root after setting the environment variable. Check the selected site before
 deploying. Uploading only `dist` through drag-and-drop does not install Functions.
 
-The `/api/plans` Function stores source configuration in a site-wide Netlify
-Blobs store. The first read uses `plans-public.json`; after the first save,
-saved data persists across deploys and is not overwritten by the seed file.
+The `/api/plans` Function reads and writes Google Sheet
+`14kRX-Z-YIEWG-EG71wOpyUIR8YlbkXLOHySqd10IyaY`, tab ID `0`, through the
+Apps Script in `google-apps-script/Code.gs`. The deployed endpoint is configured
+in `netlify/functions/plans.mjs`; `GOOGLE_PLAN_SCRIPT_URL` can override it.
+Deploy the script as a Web App executing as the owner with access Anyone.
+Set `API_TOKEN` in Script Properties, never in the public client code.
+Reserve C:H for `id`, `name`, `url`, `enabled`, `order`, `updated_at`.
+An empty range is initialized on first save; mismatched headers or formulas
+are rejected. Columns A:B are never written. Existing local/Blobs data is not
+automatically migrated; add the sources through the settings page.
 Public requests expose enabled sources only. Administrative reads include hidden
 sources. Writes validate the source list and reject stale revisions. Google Sheet
 contents remain in Google; only source names, URLs, order and visibility are stored.
-Preview deployments on the same site share this store, so do not edit production
+Apps Script serializes app writes with a script lock and checks a content revision.
+Direct manual sheet edits are not covered by that lock; avoid editing during app saves.
+Preview deployments using the same script share this sheet, so do not edit production
 configuration from deploy previews. Keep the admin password private.
 
-Run `npm test` for API tests with an in-memory store. Actual Netlify storage needs
+Run `npm test` for API and adapter tests with mocked storage. Live storage needs
 a deployed Function; the local `node server.mjs` continues using its local file.
 
 ## Static-only fallback

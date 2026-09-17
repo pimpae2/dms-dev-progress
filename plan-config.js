@@ -23,7 +23,10 @@ async function readPlanConfig() {
     if (!Array.isArray(config.plans)) throw new Error("ข้อมูลการตั้งค่าไม่ถูกต้อง");
     return { ...config, readOnly: true };
   }
-  if (!response.ok) throw new Error(response.status === 401 ? "รหัสผู้ดูแลไม่ถูกต้อง" : `อ่านค่าตั้งค่าไม่สำเร็จ (${response.status})`);
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error || `อ่านค่าตั้งค่าไม่สำเร็จ (${response.status})`);
+  }
   const config = await response.json();
   if (!Array.isArray(config.plans)) throw new Error("ข้อมูลการตั้งค่าไม่ถูกต้อง");
   return config;
