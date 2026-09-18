@@ -160,21 +160,30 @@ async function refreshProjectPlan() {
 
 function parseProjectPlan(rows, fallbackName = activePlan?.displayName || "Project") {
   rows = rows.map(row => row.map(cell => String(cell ?? "").trim()));
-  const titleHeaders = ["คำอธิบาย", "หน้าจอ/เมนู/หัวข้อ"];
-  const headerIndex = rows.findIndex((row) => titleHeaders.some(header => row.includes(header)) && row.includes("สถานะ"));
+  const titleHeaders = ["คำอธิบาย", "หน้าจอ/เมนู/หัวข้อ", "รายการ", "ชื่องาน", "งาน", "task", "feature", "menu"];
+  const statusHeaders = ["สถานะ", "สถานะงาน", "ผลการดำเนินงาน", "status"];
+  const matchesHeader = (cell, candidates) => {
+    const value = String(cell || "").trim().toLocaleLowerCase("th");
+    return candidates.some((header) => {
+      const name = header.toLocaleLowerCase("th");
+      return value === name || value.startsWith(`${name} `) || value.startsWith(`${name}:`) || value.startsWith(`${name}/`) || value.startsWith(`${name}(`);
+    });
+  };
+  const headerIndex = rows.findIndex((row) => row.some((cell) => matchesHeader(cell, titleHeaders)) && row.some((cell) => matchesHeader(cell, statusHeaders)));
   if (headerIndex < 0) return [];
   const headers = rows[headerIndex];
-  const titleIndex = titleHeaders.map(header => headers.indexOf(header)).find(index => index >= 0);
-  const statusIndex = headers.indexOf("สถานะ");
-  const codeIndex = titleIndex - 1;
+  const titleIndex = headers.findIndex((cell) => matchesHeader(cell, titleHeaders));
+  const statusIndex = headers.findIndex((cell) => matchesHeader(cell, statusHeaders));
   const palette = ["#0b6fb3", "#168fbd", "#2d83c5", "#3e75c7", "#0b9abd"];
   const systems = [];
   let current = null;
   let fallback = null;
+  let fallbackItemNumber = 0;
   for (const row of rows.slice(headerIndex + 1)) {
-    const code = String(row[codeIndex] || "").trim();
+    const rawCode = row.slice(0, titleIndex).map((cell) => String(cell || "").trim()).filter(Boolean).at(-1) || "";
     const title = String(row[titleIndex] || "").trim();
     const status = String(row[statusIndex] || "").trim();
+    const code = rawCode || (title && status ? String(++fallbackItemNumber) : "");
     if (code && title && !status && /^\d+(?:\.\d+)*$/.test(code)) {
       current = { code, name: title, accent: palette[systems.length % palette.length], slug: `plan-group-${systems.length}`, items: [] };
       systems.push(current);

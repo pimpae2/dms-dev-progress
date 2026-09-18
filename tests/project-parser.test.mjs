@@ -5,7 +5,7 @@ import vm from 'node:vm';
 
 const source = `${await readFile(new URL('../project-progress.js', import.meta.url), 'utf8')}\nglobalThis.parseProjectPlanForTest = parseProjectPlan; globalThis.parseWorkbookTabsForTest = parseWorkbookTabsHtml; globalThis.combineDashboardSystemsForTest = combineDashboardSystems;`;
 const context = {
-  DONE_STATUSES: new Set(['Developed', 'Tested']),
+  DONE_STATUSES: new Set(['Developed', 'Tested', 'Completed']),
   document: { getElementById: () => null },
   console,
 };
@@ -42,6 +42,19 @@ test('parses flat project tabs as a single project group', () => {
   ], 'DMS');
   assert.equal(result.length, 1);
   assert.equal(result[0].name, 'DMS');
+  assert.equal(result[0].total, 2);
+  assert.equal(result[0].done, 1);
+});
+
+test('parses AIM tabs with descriptive header suffixes', () => {
+  const result = context.parseProjectPlanForTest([
+    ['', '', 'หน้าจอ/เมนู/หัวข้อ Portal หน้าแรก', 'สถานะ Completed'],
+    ['1', '', 'จัดการหน้าจอระบบ', ''],
+    ['1.1', '', 'Master Control System', 'In Progress'],
+    ['1.2', '', 'ระบบ Gateway', 'Completed'],
+  ], 'AIM');
+  assert.equal(result.length, 1);
+  assert.equal(result[0].name, 'จัดการหน้าจอระบบ');
   assert.equal(result[0].total, 2);
   assert.equal(result[0].done, 1);
 });
