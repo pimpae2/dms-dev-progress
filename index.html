@@ -64,6 +64,14 @@
         <section class="panel" aria-labelledby="planTitle">
           <div class="section-head"><div><p class="eyebrow">Project Progress</p><h2 id="planTitle">ภาพรวมความคืบหน้าโครงการ</h2></div><div class="legend"><span><i class="swatch done"></i>พัฒนาแล้ว</span><span><i class="swatch problem"></i>ยังต้องติดตาม</span></div></div>
           <p id="planMessage" role="status">กำลังอ่านข้อมูล</p>
+          <div class="dashboard-search" id="dashboardSearch" hidden>
+            <label for="dashboardSearchInput">ค้นหาระบบ</label>
+            <div class="dashboard-search-field">
+              <span aria-hidden="true">⌕</span>
+              <input id="dashboardSearchInput" type="search" autocomplete="off" placeholder="พิมพ์ชื่อระบบ..." />
+            </div>
+            <div class="dashboard-search-results" id="dashboardSearchResults" role="listbox" aria-label="ผลการค้นหาระบบ" hidden></div>
+          </div>
           <div class="project-tabs" id="planTabs" aria-label="เลือกระบบในโครงการ"></div>
           <div class="project-table" id="planRows"></div>
         </section>

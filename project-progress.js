@@ -265,6 +265,50 @@ function renderDashboardCard(system) {
   </button>`;
 }
 
+function renderDashboardSearch(query = "") {
+  const search = document.getElementById("dashboardSearch");
+  const input = document.getElementById("dashboardSearchInput");
+  const results = document.getElementById("dashboardSearchResults");
+  if (!search || !input || !results) return;
+
+  const isDashboard = Boolean(activePlan?.isDashboard);
+  search.hidden = !isDashboard;
+  if (!isDashboard) {
+    input.value = "";
+    results.hidden = true;
+    results.innerHTML = "";
+    return;
+  }
+
+  const normalizedQuery = String(query || "").trim().toLocaleLowerCase("th");
+  if (!normalizedQuery) {
+    results.hidden = true;
+    results.innerHTML = "";
+    return;
+  }
+
+  const matches = planSystems
+    .filter((system) => system.name.toLocaleLowerCase("th").includes(normalizedQuery))
+    .slice(0, 8);
+  results.innerHTML = matches.length
+    ? matches.map((system) => `<button type="button" role="option" data-search-project="${escapeHtml(system.sourcePlanId)}"><strong>${escapeHtml(system.name)}</strong><span>${system.done}/${system.total} ข้อ · ${fmtPercent(system.done, system.total)}%</span></button>`).join("")
+    : `<p class="dashboard-search-empty">ไม่พบชื่อระบบที่ค้นหา</p>`;
+  results.hidden = false;
+}
+
+document.getElementById("dashboardSearchInput")?.addEventListener("input", (event) => {
+  renderDashboardSearch(event.target.value);
+});
+
+document.getElementById("dashboardSearchResults")?.addEventListener("click", async (event) => {
+  const button = event.target.closest("button[data-search-project]");
+  if (!button) return;
+  const input = document.getElementById("dashboardSearchInput");
+  if (input) input.value = "";
+  renderDashboardSearch("");
+  await activateProject(button.dataset.searchProject);
+});
+
 function revealPlanRows(planRows) {
   planRows.classList.remove("is-ready");
   requestAnimationFrame(() => planRows.classList.add("is-ready"));
@@ -294,6 +338,7 @@ function renderProjectPlan() {
   };
   const planRows = document.getElementById("planRows");
   planRows.className = activePlan.isDashboard ? "project-table dashboard-grid" : "project-table";
+  renderDashboardSearch();
   planRows.innerHTML = planSystems.length
     ? planSystems.map((system) => activePlan.isDashboard
       ? renderDashboardCard(system)
