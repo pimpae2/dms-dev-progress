@@ -83,8 +83,10 @@ async function initProjectPlans() {
   try {
     workbookTabs = [DASHBOARD_PLAN, ...await loadWorkbookTabs()];
     const requested = new URLSearchParams(location.search).get("project");
+    const dashboardPlan = workbookTabs.find(plan => plan.isDashboard);
     activePlan = workbookTabs.find(plan => plan.id === requested)
       || workbookTabs.find(plan => plan.id === activePlan?.id)
+      || dashboardPlan
       || workbookTabs[0]
       || null;
     if (requested && activePlan && activePlan.id !== requested) history.replaceState(null, "", `/?project=${encodeURIComponent(activePlan.id)}`);
@@ -117,6 +119,20 @@ document.getElementById("planSourceTabs")?.addEventListener("click", async event
   if (button) await activateProject(button.dataset.projectId);
 });
 
+document.getElementById("refreshPlanButton")?.addEventListener("click", async (event) => {
+  const button = event.currentTarget;
+  if (button.disabled || !activePlan) return;
+  button.disabled = true;
+  button.classList.add("is-loading");
+  try {
+    showProjectLoading(activePlan.displayName);
+    await refreshProjectPlan();
+  } finally {
+    button.disabled = false;
+    button.classList.remove("is-loading");
+  }
+});
+
 async function refreshProjectPlan() {
   if (!activePlan) return;
   const request = ++planRequest;
@@ -136,6 +152,7 @@ async function refreshProjectPlan() {
   } catch (error) {
     if (request !== planRequest) return;
     document.body.classList.remove("is-loading-plan");
+    if (planSystems.length) renderProjectPlan();
     setText("planMessage", `อัปเดต Project Progress ไม่สำเร็จ${planSystems.length ? " · แสดงข้อมูลครั้งล่าสุด" : ""}: ${error.message}`);
     document.querySelector(".updated").textContent = "อัปเดตข้อมูลไม่สำเร็จ";
   }

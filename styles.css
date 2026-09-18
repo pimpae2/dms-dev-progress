@@ -63,6 +63,12 @@ body[data-page="plan"] h1 { overflow-wrap: anywhere; }
   white-space: normal;
 }
 
+.view-tabs.plan-source-tabs button:not(.is-active) {
+  color: #355d78;
+  font-size: 14px;
+  font-weight: 600;
+}
+
 .view-tabs.plan-source-tabs button:hover,
 .view-tabs.plan-source-tabs button:focus-visible {
   transform: translateY(-1px);
@@ -78,6 +84,8 @@ body[data-page="plan"] h1 { overflow-wrap: anywhere; }
   background:
     linear-gradient(135deg, #0e78ba, #084d83);
   color: #fff;
+  font-size: 16px;
+  font-weight: 800;
   box-shadow:
     0 12px 24px rgba(7, 72, 121, 0.22),
     inset 4px 0 0 #8ae7ff,
@@ -233,6 +241,48 @@ footer {
 .updated {
   color: #c8d7e3;
   font-size: 15px;
+}
+
+.refresh-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 38px;
+  padding: 7px 11px;
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 700;
+  transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+
+.refresh-button > span:first-child {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.refresh-button:hover,
+.refresh-button:focus-visible {
+  border-color: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.18);
+  outline: 0;
+  transform: translateY(-1px);
+}
+
+.refresh-button:disabled {
+  cursor: wait;
+  opacity: 0.72;
+}
+
+.refresh-button.is-loading > span:first-child {
+  animation: refresh-spin 900ms linear infinite;
+}
+
+@keyframes refresh-spin {
+  to { transform: rotate(360deg); }
 }
 
 .topbar-actions {
@@ -1999,6 +2049,11 @@ footer {
   .topbar-actions {
     align-items: flex-start;
     justify-content: flex-start;
+  }
+
+  .refresh-button {
+    min-height: 36px;
+    padding: 6px 10px;
   }
 
   .view-tabs {
