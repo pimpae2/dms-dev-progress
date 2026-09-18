@@ -12,8 +12,8 @@ next page load or automatic refresh; there is no settings page or write API.
 Each project tab must contain a `สถานะ` column and either a
 `หน้าจอ/เมนู/หัวข้อ` or `คำอธิบาย` column. The immediately preceding column is
 the item number. Numbered rows without a status create system groups; flat tabs
-without group rows are shown as one group. `Developed` and `Tested` count as
-complete. Rows without a status are not counted.
+without group rows are shown as one group. `Developed`, `Tested`, and
+`Completed` count as complete. Rows without a status are not counted.
 
 The workbook must be readable by anyone with the link. The browser reads the
 workbook's public tab metadata and CSV data directly from Google in read-only

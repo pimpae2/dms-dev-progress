@@ -1,7 +1,7 @@
 const SHEET_ID = "1vAv6UKV57NoRlDG5a0tL88AI0qfGIcDWr74FLOm8cfA";
 const DEV_SHEET_GID = "1262019974";
 const DOCUMENT_SHEET_GID = "345092171";
-const DONE_STATUSES = new Set(["Developed", "Tested"]);
+const DONE_STATUSES = new Set(["Developed", "Tested", "Completed"]);
 const DOCUMENT_READY_STATUSES = new Set(["เซ็นหน้าจอแล้ว", "ส่งแล้ว"]);
 const DOCUMENT_EMPTY_STATUS = "ยังไม่ระบุ";
 const REFRESH_INTERVAL_MS = 60_000;
@@ -21,8 +21,8 @@ const sheetLinks = {
 };
 
 const heroSubtitles = {
-  plan: "Project Plan_ORG · องค์กรนายจ้าง, ePaySLF และลงพื้นที่ · นับเฉพาะข้อที่มีสถานะ โดย Developed และ Tested ถือว่าพัฒนาแล้ว",
-  dev: "เกณฑ์การนับ: <strong>Tested</strong> และ <strong>Developed</strong> คือจำนวนงานที่แก้ไขแล้ว ส่วนสถานะอื่นทั้งหมดนับเป็นงานติดปัญหา/ยังไม่จบ",
+  plan: "Project Plan_ORG · องค์กรนายจ้าง, ePaySLF และลงพื้นที่ · นับเฉพาะข้อที่มีสถานะ โดย Developed, Tested และ Completed ถือว่าพัฒนาแล้ว",
+  dev: "เกณฑ์การนับ: <strong>Tested</strong>, <strong>Developed</strong> และ <strong>Completed</strong> คือจำนวนงานที่แก้ไขแล้ว ส่วนสถานะอื่นทั้งหมดนับเป็นงานติดปัญหา/ยังไม่จบ",
   documents: "งานเอกสารอ่านจากแท็บเอกสารส่งเซ็นหน้าจอ โดยแสดงสถานะของแต่ละระบบแยกตามตัวงาน",
 };
 

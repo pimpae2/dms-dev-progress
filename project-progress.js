@@ -96,7 +96,7 @@ async function initProjectPlans() {
       return;
     }
     document.querySelector(".hero h1").textContent = activePlan.displayName;
-    setText("heroSubtitle", "Project Progress · นับเฉพาะข้อที่มีสถานะ · Developed และ Tested ถือว่าพัฒนาแล้ว");
+    setText("heroSubtitle", "Project Progress · นับเฉพาะข้อที่มีสถานะ · Developed, Tested และ Completed ถือว่าพัฒนาแล้ว");
     showProjectLoading(activePlan.displayName);
     await refreshProjectPlan();
   } catch (error) { setText("planMessage", error.message); }
