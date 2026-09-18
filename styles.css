@@ -36,8 +36,9 @@ body[data-page="plan"] h1 { overflow-wrap: anywhere; }
   right: 14px;
   align-items: stretch;
   width: 168px;
-  max-height: none;
-  overflow-y: visible;
+  max-height: calc(100vh - 52px);
+  overflow-x: hidden;
+  overflow-y: auto;
   gap: 8px;
   border: 1px solid rgba(185, 218, 238, 0.72);
   border-radius: 16px;
@@ -49,6 +50,8 @@ body[data-page="plan"] h1 { overflow-wrap: anywhere; }
     inset 0 1px 0 rgba(255, 255, 255, 0.72);
   backdrop-filter: blur(18px) saturate(1.15);
   padding-right: 6px;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
 }
 
 .view-tabs.plan-source-tabs button {
