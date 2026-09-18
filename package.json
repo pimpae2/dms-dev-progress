@@ -1,5 +1,5 @@
 {
-  "name": "dms-dev-progress",
+  "name": "dsl2-dev-progress",
   "private": true,
   "scripts": {
     "build": "node build.mjs",
