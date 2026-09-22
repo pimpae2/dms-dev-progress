@@ -279,6 +279,29 @@ button {
   font: inherit;
 }
 
+.back-to-top {
+  position: fixed;
+  right: max(18px, env(safe-area-inset-right));
+  bottom: max(18px, env(safe-area-inset-bottom));
+  z-index: 40;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid #b8d9ed;
+  border-radius: 50%;
+  background: #0b6fb3;
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(9, 62, 104, 0.22);
+  cursor: pointer;
+  font-size: 26px;
+  line-height: 1;
+}
+.back-to-top[hidden] { display: none; }
+.back-to-top:hover { background: #08568c; }
+.back-to-top:focus-visible { outline: 3px solid #0b6fb3; outline-offset: 4px; }
+
 .hero-snapshot[hidden] { display: none; }
 #planDetails { grid-template-columns: 1fr; }
 #planDetails .detail-card { scroll-margin-top: 24px; }

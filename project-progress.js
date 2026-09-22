@@ -12,6 +12,22 @@ const SPECIAL_PLANS = [
   { id: "uat-environment", gid: "209210002", displayName: "เครื่อง UAT", kind: "environment-uat", workbookId: ENVIRONMENT_WORKBOOK_ID },
 ];
 
+const backToTop = document.getElementById("backToTop");
+if (backToTop) {
+  const updateBackToTop = () => {
+    const threshold = Math.max(500, window.innerHeight * 0.75);
+    backToTop.hidden = window.scrollY < threshold
+      || document.documentElement.scrollHeight - window.innerHeight < threshold;
+  };
+  window.addEventListener("scroll", updateBackToTop, { passive: true });
+  window.addEventListener("resize", updateBackToTop);
+  new ResizeObserver(updateBackToTop).observe(document.body);
+  backToTop.addEventListener("click", () => {
+    window.scrollTo({ top: 0, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
+  });
+  updateBackToTop();
+}
+
 function projectDisplayName(name) {
   return String(name || "").replace(/^Project\s*Plan[_\s-]*/i, "").trim() || String(name || "Project Progress");
 }
