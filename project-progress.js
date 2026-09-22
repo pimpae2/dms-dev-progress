@@ -623,6 +623,7 @@ function revealPlanRows(planRows) {
 }
 
 function renderProjectPlan() {
+  document.getElementById("planView").dataset.planKind = activePlan.kind || "project";
   const { total, done } = planTotals();
   const percent = planPercent();
   setText("planTotal", total);

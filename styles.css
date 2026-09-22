@@ -1285,6 +1285,16 @@ body.is-loading-plan .metric-card small {
   border-left: 3px solid rgba(255, 255, 255, 0.92);
 }
 
+/* Empty segments must not leave a separator at either end of the bar. */
+.bar:not(.is-loading) > span:is([style*="width:0%"], [style*="width: 0%"]) {
+  display: none;
+}
+
+.bar:not(.is-loading) > span:is([style*="width:100%"], [style*="width: 100%"]) {
+  border-radius: 999px;
+  border-left: 0;
+}
+
 .bar.is-loading span:first-child,
 .bar.is-loading span:last-child {
   width: 100%;
@@ -1987,6 +1997,16 @@ body.is-loading-plan .metric-card small {
 .status-chip.status-blocked {
   background: #ffe2e5;
   color: #a32238;
+}
+
+[data-plan-kind="environment-uat"] .status-chip.status-fail {
+  background: #ffe2e5;
+  color: #a32238;
+}
+
+[data-plan-kind="environment-uat"] .status-chip.status-blocked {
+  background: #fff2cc;
+  color: #805500;
 }
 
 .status-chip.status-untested {
