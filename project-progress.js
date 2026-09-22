@@ -197,7 +197,7 @@ function parseProjectPlan(rows, fallbackName = activePlan?.displayName || "Proje
   let fallback = null;
   let fallbackItemNumber = 0;
   const dataRows = rows.slice(headerIndex + 1).map((row) => {
-    const rawCode = row.slice(0, titleIndex).map((cell) => String(cell || "").trim()).filter(Boolean).at(-1) || "";
+    const rawCode = (row.slice(0, titleIndex).map((cell) => String(cell || "").trim()).filter(Boolean).at(-1) || "").replace(/[\u200B-\u200D\uFEFF]/g, "");
     return {
       row,
       rawCode,
@@ -210,11 +210,18 @@ function parseProjectPlan(rows, fallbackName = activePlan?.displayName || "Proje
     .filter((record) => dataRows.some((candidate) => candidate.rawCode.startsWith(`${record.rawCode}.`)))
     .map((record) => record.rawCode.split(".").length)
     .sort((a, b) => a - b)[0];
+  const hasTextSections = dataRows.some(({ row, rawCode, title, status }) =>
+    rawCode && !/^\d/.test(rawCode) && !title && !status && row.slice(titleIndex).every(cell => !cell));
 
   for (const record of dataRows) {
     const { row, rawCode, title, status } = record;
+    if (hasTextSections && rawCode && !/^\d/.test(rawCode) && !title && !status && row.slice(titleIndex).every(cell => !cell)) {
+      current = { code: "", name: rawCode, accent: palette[systems.length % palette.length], slug: `plan-group-${systems.length}`, items: [], textSection: true };
+      systems.push(current);
+      continue;
+    }
     const code = rawCode || (title && status ? String(++fallbackItemNumber) : "");
-    if (code && title && !status && /^\d+(?:\.\d+)*$/.test(code)
+    if (!hasTextSections && code && title && !status && /^\d+(?:\.\d+)*$/.test(code)
       && (!groupDepth || code.split(".").length === groupDepth)) {
       current = { code, name: title, accent: palette[systems.length % palette.length], slug: `plan-group-${systems.length}`, items: [] };
       systems.push(current);
@@ -230,7 +237,7 @@ function parseProjectPlan(rows, fallbackName = activePlan?.displayName || "Proje
     }
     system.items.push({ code, title, status });
   }
-  return systems.filter(system => system.items.length).map((system) => ({
+  return systems.filter(system => system.items.length || system.textSection).map((system) => ({
     ...system,
     total: system.items.length,
     done: system.items.filter((item) => DONE_STATUSES.has(item.status)).length,
@@ -241,7 +248,7 @@ async function loadProjectPlan(gid, fallbackName = activePlan?.displayName || "P
   if (location.protocol === "file:") throw new Error("กรุณาเปิดหน้านี้ผ่านเว็บ Netlify หรือ localhost ไม่ใช่เปิดไฟล์ HTML โดยตรง");
   let response;
   try {
-    response = await fetch(`https://docs.google.com/spreadsheets/d/${PROJECT_WORKBOOK_ID}/gviz/tq?tqx=out:csv&gid=${encodeURIComponent(gid)}`, {
+    response = await fetch(`https://docs.google.com/spreadsheets/d/${PROJECT_WORKBOOK_ID}/export?format=csv&gid=${encodeURIComponent(gid)}`, {
       cache: "no-store", credentials: "omit", signal: AbortSignal.timeout(25000),
     });
   } catch {

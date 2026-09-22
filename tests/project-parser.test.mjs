@@ -11,6 +11,30 @@ const context = {
 };
 vm.runInNewContext(source, context);
 
+test('LES text section headings retain ownership and empty sections without counting blank statuses', () => {
+  const result = context.parseProjectPlanForTest([
+    ['', 'หน้าจอ/เมนู/หัวข้อ', 'สถานะ'],
+    ['กองทุน', '', ''],
+    ['1', 'Fund task', 'Completed'],
+    ['ทนายความ', '', ''],
+    ['2', 'Lawyer task', 'In Progress'],
+    ['3', 'Blank status task', ''],
+    ['การเงิน', '', ''],
+    ['4', 'Finance task', ''],
+  ], 'LES');
+  assert.deepEqual(Array.from(result, g => [g.name, g.total, g.done]), [['กองทุน', 1, 1], ['ทนายความ', 1, 0], ['การเงิน', 0, 0]]);
+});
+
+test('LOS invisible characters in numeric codes do not drop tasks', () => {
+  const result = context.parseProjectPlanForTest([
+    ['', 'หน้าจอ/เมนู/หัวข้อ', 'สถานะ'],
+    ['3', 'Section', ''],
+    ['3.1\u200b0', 'เงินอุดหนุน', 'In Progress'],
+  ], 'LOS');
+  assert.equal(result[0].total, 1);
+  assert.equal(result[0].items[0].code, '3.10');
+});
+
 test('UAT uses its own status column even when introductory text mentions statuses', () => {
   const result = context.parseEnvironmentPlan([
     ['UAT plan สถานะ UAT เริ่ม UNTESTED'],
