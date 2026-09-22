@@ -460,7 +460,7 @@ function syncPmBrief() {
 
 function syncHeroMeter() {
   const percent = activeView === "plan" ? planPercent() : activeView === "documents" ? documentReadyPercent() : devPercent();
-  const label = activeView === "plan" ? "พัฒนาแล้ว" : activeView === "documents" ? "ส่ง/เซ็นแล้ว" : "แก้ไขแล้ว";
+  const label = activeView === "plan" ? (isSpecialPlan() ? specialProgressLabel(activePlan) : "พัฒนาแล้ว") : activeView === "documents" ? "ส่ง/เซ็นแล้ว" : "แก้ไขแล้ว";
   document.getElementById("overallPercent").textContent = `${percent}%`;
   document.getElementById("overallDonut").style.setProperty("--percent", percent);
   document.querySelector("#overallDonut small").textContent = label;

@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>dsl2-dev</title>
+    <title>DSL2 Dev</title>
     <link rel="icon" href="data:," />
     <link rel="stylesheet" href="styles.css?v=aligned-project-tabs" />
   </head>
@@ -47,7 +47,7 @@
         <div class="hero-meter" aria-label="สถานะรวมมุมมองปัจจุบัน">
           <div class="donut" id="overallDonut">
             <span id="overallPercent">0%</span>
-            <small>แก้ไขแล้ว</small>
+            <small id="overallLabel">แก้ไขแล้ว</small>
           </div>
           <div class="priority-card" hidden>
             <span>ควรตามก่อน</span>
@@ -59,6 +59,7 @@
     </header>
     <main>
       <section class="view-tabs plan-source-tabs" id="planSourceTabs" aria-label="เลือกโปรเจกต์"></section>
+      <nav class="system-nav" id="systemNav" aria-label="เลือกหัวข้อระบบ" hidden></nav>
       <div class="dashboard-view" id="planView" data-view-panel="plan">
         <section class="metrics" aria-label="ภาพรวม Project Progress">
           <article class="metric-card"><span class="metric-label">งานทั้งหมด</span><strong id="planTotal">—</strong><small id="planSystemCount">รายการที่มีสถานะ</small></article>
@@ -66,7 +67,7 @@
           <article class="metric-card is-problem"><span class="metric-label">ยังต้องติดตาม</span><strong id="planPending">—</strong><small id="planPendingRatio">กำลังโหลดข้อมูล</small></article>
         </section>
         <section class="panel" aria-labelledby="planTitle">
-          <div class="section-head"><div><p class="eyebrow">Project Progress</p><h2 id="planTitle">ภาพรวมความคืบหน้าโครงการ</h2></div><div class="legend"><span><i class="swatch done"></i>พัฒนาแล้ว</span><span><i class="swatch problem"></i>ยังต้องติดตาม</span></div></div>
+          <div class="section-head"><div><p class="eyebrow">Project Progress</p><h2 id="planTitle">ภาพรวมความคืบหน้าโครงการ</h2></div><div class="legend"><span id="planDoneLegend"><i class="swatch done"></i>พัฒนาแล้ว</span><span id="planPendingLegend"><i class="swatch problem"></i>ยังต้องติดตาม</span></div></div>
           <p id="planMessage" role="status">กำลังอ่านข้อมูล</p>
           <div class="dashboard-search" id="dashboardSearch" hidden>
             <label for="dashboardSearchInput">ค้นหาระบบ</label>
@@ -76,7 +77,6 @@
             </div>
             <div class="dashboard-search-results" id="dashboardSearchResults" role="listbox" aria-label="ผลการค้นหาระบบ" hidden></div>
           </div>
-          <div class="project-tabs" id="planTabs" aria-label="เลือกระบบในโครงการ"></div>
           <div class="project-table" id="planRows"></div>
         </section>
         <section class="details" id="planDetailsSection" aria-labelledby="planDetailsTitle"><div class="section-head"><div><p class="eyebrow">Project Detail</p><h2 id="planDetailsTitle">รายละเอียดรายระบบ</h2></div></div><div class="detail-grid" id="planDetails"></div></section>

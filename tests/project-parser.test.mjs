@@ -11,6 +11,41 @@ const context = {
 };
 vm.runInNewContext(source, context);
 
+test('UAT uses its own status column even when introductory text mentions statuses', () => {
+  const result = context.parseEnvironmentPlan([
+    ['UAT plan สถานะ UAT เริ่ม UNTESTED'],
+    ['รหัสงาน UAT', 'เครื่อง UAT', 'IP', 'ขั้นตอน', 'รายการติดตั้ง / Config', 'เกณฑ์ตรวจรับ', 'อ้างอิง DEV', 'สถานะ DEV ต้นทาง', 'สถานะ UAT'],
+    ['UAT-01', 'uat', '', 'Config', 'Task A', '', '', 'PASS', 'UNTESTED'],
+    ['UAT-02', 'uat', '', 'Config', 'Task B', '', '', 'PENDING', 'PASS'],
+  ], { kind: 'environment-uat' });
+  assert.equal(result[0].total, 2);
+  assert.equal(result[0].done, 1);
+  assert.equal(result[0].items[0].status, 'UNTESTED');
+  assert.equal(result[0].items[1].status, 'PASS');
+});
+
+test('UAT resolves reordered columns by exact header name', () => {
+  const result = context.parseEnvironmentPlan([
+    ['สถานะ DEV ต้นทาง', 'สถานะ UAT', 'เครื่อง UAT', 'รายการติดตั้ง / Config', 'รหัสงาน UAT'],
+    ['PASS', 'BLOCKED', 'uat', 'Task', 'UAT-01'],
+  ], { kind: 'environment-uat' });
+  assert.equal(result[0].done, 0);
+  assert.equal(result[0].items[0].status, 'BLOCKED');
+});
+
+test('Dev progress uses current task statuses rather than stale summary totals', () => {
+  const result = context.parseEnvironmentPlan([
+    ['บทบาท', 'เครื่อง', 'รวม ผ่าน/ทั้งหมด'],
+    ['VM-01', 'dev', '0/2'],
+    ['ภาพรวม', '', '0/2'],
+    ['รหัสงาน', 'เครื่อง', 'ขั้นตอน', 'งาน', 'สถานะล่าสุด'],
+    ['D-01', 'dev', 'Config', 'Task A', 'PASS'],
+    ['D-02', 'dev', 'Config', 'Task B', 'BLOCKED'],
+  ], { kind: 'environment-dev' });
+  assert.equal(result[0].total, 2);
+  assert.equal(result[0].done, 1);
+});
+
 test('discovers all workbook tabs in their displayed order', () => {
   const result = context.parseWorkbookTabsForTest(`<script>
     items.push({name: "องค์กรนายจ้าง", pageUrl: "x", gid: "1021126458"});
@@ -52,11 +87,16 @@ test('parses AIM tabs with descriptive header suffixes', () => {
     ['1', '', 'จัดการหน้าจอระบบ', ''],
     ['1.1', '', 'Master Control System', 'In Progress'],
     ['1.2', '', 'ระบบ Gateway', 'Completed'],
+    ['2', '', 'จัดการข้อความแจ้งเตือน', ''],
+    ['2.1', '', 'Info Message', 'In Progress'],
+    ['3', '', 'จัดการผู้ใช้งานและสิทธิ์ภายใน', ''],
+    ['3.1', '', 'จัดการ User', 'Completed'],
   ], 'AIM');
-  assert.equal(result.length, 1);
+  assert.equal(result.length, 3);
   assert.equal(result[0].name, 'จัดการหน้าจอระบบ');
   assert.equal(result[0].total, 2);
   assert.equal(result[0].done, 1);
+  assert.equal(Array.from(result, (system) => system.name).join('|'), 'จัดการหน้าจอระบบ|จัดการข้อความแจ้งเตือน|จัดการผู้ใช้งานและสิทธิ์ภายใน');
 });
 
 test('keeps empty project tabs available without an error', () => {
