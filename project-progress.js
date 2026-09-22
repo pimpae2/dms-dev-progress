@@ -12,6 +12,10 @@ const SPECIAL_PLANS = [
   { id: "uat-environment", gid: "209210002", displayName: "เครื่อง UAT", kind: "environment-uat", workbookId: ENVIRONMENT_WORKBOOK_ID },
 ];
 
+function applyPlanTheme(plan) {
+  document.body.dataset.planKind = plan?.kind || "project";
+}
+
 const backToTop = document.getElementById("backToTop");
 if (backToTop) {
   const updateBackToTop = () => {
@@ -117,6 +121,7 @@ async function initProjectPlans() {
       showNoProject("ยังไม่พบแท็บใน Google Sheet");
       return;
     }
+    applyPlanTheme(activePlan);
     document.querySelector(".hero h1").textContent = activePlan.displayName;
     setText("heroSubtitle", activePlan.kind === "environment-dev"
       ? "Environment Readiness · สรุปความพร้อมเครื่อง Dev จากหลักฐาน PASS"
@@ -133,6 +138,7 @@ async function activateProject(projectId) {
   activePlan = workbookTabs.find(plan => plan.id === projectId) || null;
   if (!activePlan) return;
   planSystems = [];
+  applyPlanTheme(activePlan);
   renderProjectSourceTabs();
   document.querySelector(".hero h1").textContent = activePlan.displayName;
   setText("heroSubtitle", activePlan.kind === "environment-dev"

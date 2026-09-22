@@ -364,6 +364,27 @@ footer {
   position: relative;
 }
 
+body[data-page="plan"][data-plan-kind^="environment-"] .hero {
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.055) 1px, transparent 1px),
+    linear-gradient(145deg, #2a9bc5 0%, #1682b3 52%, #0d6895 100%);
+  box-shadow: 0 24px 56px rgba(12, 105, 150, 0.22);
+}
+
+body[data-page="plan"][data-plan-kind^="environment-"] .brand::before {
+  background: #a9ecff;
+  box-shadow: 0 0 0 5px rgba(169, 236, 255, 0.22);
+}
+
+body[data-page="plan"][data-plan-kind^="environment-"] .updated,
+body[data-page="plan"][data-plan-kind^="environment-"] .subtitle {
+  color: #e2f7ff;
+}
+
+body[data-page="plan"][data-plan-kind^="environment-"] #overallDonut {
+  --accent: #2cc2e6;
+}
+
 .topbar,
 .hero-grid,
 .section-head,
