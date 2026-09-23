@@ -11,6 +11,24 @@ const context = {
 };
 vm.runInNewContext(source, context);
 
+test('UAT history selects last capture of yesterday in Bangkok and separates scope changes', () => {
+  const rows = [
+    ['2026-09-22T10:00:00Z', '2026-09-22', 'A', 'vm', 'Task A', 'UNTESTED'],
+    ['2026-09-22T16:00:00Z', '2026-09-22', 'A', 'vm', 'Task A', 'BLOCKED'],
+    ['2026-09-22T16:00:00Z', '2026-09-22', 'B', 'vm', 'Task B', 'PASS'],
+    ['2026-09-22T18:00:00Z', '2026-09-23', 'A', 'vm', 'Task A', 'PASS'],
+  ];
+  const current = [{code: 'A', machine: 'vm', title: 'Task A', status: 'PASS'}, {code: 'C', machine: 'vm', title: 'Task C', status: 'UNTESTED'}];
+  const result = context.compareUatHistory(current, rows, new Date('2026-09-22T19:00:00Z'));
+  assert.equal(result.changes.length, 1);
+  assert.equal(result.changes[0].before, 'BLOCKED');
+  assert.equal(result.added[0].code, 'C');
+  assert.equal(result.removed[0].code, 'B');
+  assert.equal(result.machines[0].beforeDone, 1);
+  assert.equal(result.machines[0].afterDone, 1);
+  assert.equal(context.compareUatHistory(current, [], new Date('2026-09-23T01:00:00Z')), null);
+});
+
 test('LES text section headings retain ownership and empty sections without counting blank statuses', () => {
   const result = context.parseProjectPlanForTest([
     ['', 'หน้าจอ/เมนู/หัวข้อ', 'สถานะ'],

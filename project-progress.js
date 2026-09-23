@@ -3,6 +3,8 @@ let workbookTabs = [];
 let activePlan = null;
 let planRequest = 0;
 let dashboardFailedTabs = 0;
+const UAT_HISTORY_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR2abe7ebV8hlboWNdL7hsQe3DNEkgxd77Ok1s4Sn0vvWnFc_UnbiIhy2FFq1zrx-wBSgVdLwTG3-P8/pub?gid=0&single=true&output=csv";
+let uatHistory = { rows: [], error: false };
 let systemNavObserver = null;
 const PROJECT_WORKBOOK_ID = "1Hi1M7GNhA5G2p7BgiGLH3F5A3aKgO2A-iU46XGOvFC8";
 const DASHBOARD_PLAN = { id: "dashboard", displayName: "Dashboard", isDashboard: true };
@@ -72,6 +74,8 @@ function showNoProject(message) {
 
 function showProjectLoading(label = activePlan?.displayName || "Project Progress") {
   document.body.classList.add("is-loading-plan");
+  const comparisonDetails = document.getElementById('dailyComparisonDetails');
+  if (comparisonDetails) comparisonDetails.hidden = true;
   setText("planMessage", `กำลังอ่าน ${label}`);
   setText("planTotal", "...");
   setText("planDone", "...");
@@ -182,6 +186,20 @@ async function refreshProjectPlan() {
       : await loadProjectPlan(activePlan.gid, activePlan.displayName);
     if (request !== planRequest) return;
     planSystems = systems;
+    if (activePlan.kind === "environment-uat") {
+      let history = { rows: [], error: false };
+      if (UAT_HISTORY_CSV_URL) {
+        try {
+          const response = await fetch(UAT_HISTORY_CSV_URL, { cache: "no-store", credentials: "omit", signal: AbortSignal.timeout(15000) });
+          if (!response.ok) throw new Error('History unavailable');
+          const rows = parseCsv(await response.text());
+          if (rows[0]?.[0] !== 'captured_at') throw new Error('Invalid history');
+          history.rows = rows.slice(1);
+        } catch { history.error = true; }
+      }
+      if (request !== planRequest) return;
+      uatHistory = history;
+    }
     renderProjectPlan();
     document.body.classList.remove("is-loading-plan");
     syncHeroMeter();
@@ -440,6 +458,55 @@ function planPercent() {
   return fmtPercent(done, total);
 }
 
+function syncDailyComparison(percent) {
+  const card = document.getElementById("dailyComparison");
+  if (!card) return;
+  const show = activePlan?.kind === "environment-uat";
+  card.hidden = !show;
+  document.querySelector(".metrics")?.classList.toggle("has-comparison", show);
+  const detail = document.getElementById('dailyComparisonDetails');
+  if (detail) { detail.hidden = true; detail.innerHTML = ''; }
+  if (!show) return;
+  setText("comparisonToday", `${percent}%`);
+  setText("comparisonYesterday", "—");
+  setText("comparisonDelta", "—");
+  setText("comparisonStatus", "ยังไม่มีข้อมูลเมื่อวานสำหรับเปรียบเทียบ");
+  if (uatHistory.error) { setText('comparisonStatus', 'อ่านประวัติไม่สำเร็จ กรุณารีเฟรชอีกครั้ง'); return; }
+  const comparison = compareUatHistory(planSystems.flatMap(s => s.items), uatHistory.rows);
+  if (!comparison) return;
+  const { previous, changes, added, removed, machines, capturedAt } = comparison;
+  const todayItems = planSystems.flatMap(s => s.items);
+  const percentage = items => items.length ? items.filter(x => x.status.toUpperCase() === 'PASS').length / items.length * 100 : 0;
+  const delta = percentage(todayItems) - percentage(previous);
+  setText('comparisonYesterday', `${percentage(previous).toFixed(1)}%`);
+  setText('comparisonDelta', `${delta > 0 ? '+' : ''}${delta.toFixed(1)} จุด`);
+  setText('comparisonStatus', `เปลี่ยนสถานะ ${changes.length} งาน · เพิ่ม ${added.length} · นำออก ${removed.length}`);
+  if (detail) {
+    detail.hidden = false;
+    detail.innerHTML = `<summary>การเปลี่ยนแปลงเทียบเมื่อวาน (${changes.length})</summary><p>เทียบข้อมูล ณ ${escapeHtml(new Date(capturedAt).toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' }))}</p><ul>${machines.map(m => `<li>${escapeHtml(m.name)}: PASS ${m.beforeDone}/${m.beforeTotal} → ${m.afterDone}/${m.afterTotal}</li>`).join('')}</ul><ul>${changes.map(x => `<li><b>${escapeHtml(x.code)}</b> · ${escapeHtml(x.machine)} · ${escapeHtml(x.title)}<br>${escapeHtml(x.before)} → ${escapeHtml(x.status)}</li>`).join('')}</ul>${!changes.length ? '<p>ไม่มีการเปลี่ยนสถานะในงานที่จับคู่ได้</p>' : ''}<p>เพิ่ม ${added.length} งาน · นำออก ${removed.length} งาน (ไม่นับเป็นการเปลี่ยนสถานะ)</p>`;
+  }
+}
+
+function compareUatHistory(current, rows, now = new Date()) {
+  const thaiDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Bangkok', year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
+  const yesterday = new Date(`${thaiDate}T00:00:00Z`);
+  yesterday.setUTCDate(yesterday.getUTCDate() - 1);
+  const day = yesterday.toISOString().slice(0, 10);
+  const candidates = rows.filter(r => r[1] === day && r[2] && r[5] && Number.isFinite(Date.parse(r[0])));
+  if (!candidates.length) return null;
+  const capturedAt = candidates.map(r => r[0]).sort().at(-1);
+  const previous = candidates.filter(r => r[0] === capturedAt).map(r => ({ code: r[2], machine: r[3], title: r[4], status: r[5] }));
+  const before = new Map(previous.map(x => [x.code, x]));
+  const after = new Map(current.map(x => [x.code, x]));
+  if (before.size !== previous.length || after.size !== current.length) return null;
+  const changes = current.filter(x => before.has(x.code) && before.get(x.code).status.toUpperCase() !== x.status.toUpperCase()).map(x => ({ ...x, before: before.get(x.code).status }));
+  const machines = [...new Set([...previous, ...current].map(x => x.machine))].map(name => {
+    const old = previous.filter(x => x.machine === name), latest = current.filter(x => x.machine === name);
+    return { name, beforeTotal: old.length, beforeDone: old.filter(x => x.status.toUpperCase() === 'PASS').length, afterTotal: latest.length, afterDone: latest.filter(x => x.status.toUpperCase() === 'PASS').length };
+  });
+  return { capturedAt, previous, changes, machines, added: current.filter(x => !before.has(x.code)), removed: previous.filter(x => !after.has(x.code)) };
+}
+
 function syncPlanBrief() {
   const focus = [...planSystems].sort((a, b) => (b.total - b.done) - (a.total - a.done))[0];
   setText("heroFocusLabel", focus ? (focus.total > focus.done ? focus.name : "พัฒนาครบแล้ว") : activePlan?.displayName || "ยังไม่มีข้อมูล");
@@ -651,6 +718,7 @@ function renderProjectPlan() {
   document.getElementById("planView").dataset.planKind = activePlan.kind || "project";
   const { total, done } = planTotals();
   const percent = planPercent();
+  syncDailyComparison(percent);
   setText("planTotal", total);
   setText("planDone", `${done}/${total}`);
   setText("planPending", `${total - done}/${total}`);
