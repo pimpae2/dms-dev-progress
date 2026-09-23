@@ -11,6 +11,16 @@ const context = {
 };
 vm.runInNewContext(source, context);
 
+test('real September 22 baseline contains 84 unique UAT tasks and 24 passes', async () => {
+  const seed = JSON.parse(await readFile(new URL('../uat-history-seed.json', import.meta.url), 'utf8'));
+  const result = context.compareUatHistory([], seed.rows, new Date('2026-09-23T09:00:00Z'));
+  assert.equal(result.previous.length, 84);
+  assert.equal(result.previous.filter(x => x.status === 'PASS').length, 24);
+  assert.equal(result.machines.find(x => x.name === 'k8s-02-VM').beforeDone, 10);
+  assert.equal(result.machines.find(x => x.name === 'shared-02-VM').beforeDone, 14);
+  assert.equal(context.compareUatHistory([], seed.rows, new Date('2026-09-24T09:00:00Z')), null);
+});
+
 test('UAT history selects last capture of yesterday in Bangkok and separates scope changes', () => {
   const rows = [
     ['2026-09-22T10:00:00Z', '2026-09-22', 'A', 'vm', 'Task A', 'UNTESTED'],
@@ -27,6 +37,17 @@ test('UAT history selects last capture of yesterday in Bangkok and separates sco
   assert.equal(result.machines[0].beforeDone, 1);
   assert.equal(result.machines[0].afterDone, 1);
   assert.equal(context.compareUatHistory(current, [], new Date('2026-09-23T01:00:00Z')), null);
+});
+
+test('UAT changed tasks retain the latest owner from column J', () => {
+  const systems = context.parseEnvironmentPlan([
+    ['รหัสงาน UAT', 'เครื่อง UAT', 'IP', 'ขั้นตอน', 'รายการติดตั้ง / Config', 'เกณฑ์ตรวจรับ', 'อ้างอิง DEV', 'สถานะ DEV ต้นทาง', 'สถานะ UAT', 'ผู้รับผิดชอบ'],
+    ['UAT-01', 'uat', '', 'Config', 'Task A', '', '', 'PASS', 'PASS', 'Team A'],
+  ], { kind: 'environment-uat' });
+  const result = context.compareUatHistory(systems.flatMap(s => s.items), [
+    ['2026-09-22T16:00:00Z', '2026-09-22', 'UAT-01', 'uat', 'Task A', 'BLOCKED'],
+  ], new Date('2026-09-23T09:00:00Z'));
+  assert.equal(result.changes[0].owner, 'Team A');
 });
 
 test('LES text section headings retain ownership and empty sections without counting blank statuses', () => {

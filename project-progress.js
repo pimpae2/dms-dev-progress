@@ -197,6 +197,16 @@ async function refreshProjectPlan() {
           history.rows = rows.slice(1);
         } catch { history.error = true; }
       }
+      if (!compareUatHistory(systems.flatMap(s => s.items), history.rows)) {
+        try {
+          const response = await fetch('/uat-history-seed.json', { cache: 'no-store', signal: AbortSignal.timeout(10000) });
+          if (!response.ok) throw new Error('History seed unavailable');
+          const seed = await response.json();
+          if (compareUatHistory(systems.flatMap(s => s.items), seed.rows)) {
+            history = { rows: seed.rows, error: false };
+          }
+        } catch { /* Keep the live history state when the seed is unavailable. */ }
+      }
       if (request !== planRequest) return;
       uatHistory = history;
     }
@@ -465,27 +475,46 @@ function syncDailyComparison(percent) {
   card.hidden = !show;
   document.querySelector(".metrics")?.classList.toggle("has-comparison", show);
   const detail = document.getElementById('dailyComparisonDetails');
-  if (detail) { detail.hidden = true; detail.innerHTML = ''; }
+  if (detail) { detail.hidden = false; detail.innerHTML = '<p>ยังไม่มีข้อมูลเมื่อวานสำหรับเปรียบเทียบ</p>'; }
   if (!show) return;
+  const now = new Date();
+  const thaiDay = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Bangkok', year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
+  const previousDay = new Date(`${thaiDay}T00:00:00Z`);
+  previousDay.setUTCDate(previousDay.getUTCDate() - 1);
+  const dateLabel = date => `วันที่ ${date.toLocaleDateString('th-TH', { timeZone: 'Asia/Bangkok', day: 'numeric', month: 'long', year: 'numeric' })}`;
+  setText('comparisonTodayDate', dateLabel(now));
+  setText('comparisonYesterdayDate', dateLabel(previousDay));
   setText("comparisonToday", `${percent}%`);
   setText("comparisonYesterday", "—");
-  setText("comparisonDelta", "—");
   setText("comparisonStatus", "ยังไม่มีข้อมูลเมื่อวานสำหรับเปรียบเทียบ");
-  if (uatHistory.error) { setText('comparisonStatus', 'อ่านประวัติไม่สำเร็จ กรุณารีเฟรชอีกครั้ง'); return; }
-  const comparison = compareUatHistory(planSystems.flatMap(s => s.items), uatHistory.rows);
+  if (uatHistory.error) { setText('comparisonStatus', 'อ่านประวัติไม่สำเร็จ กรุณารีเฟรชอีกครั้ง'); if (detail) detail.textContent = 'อ่านประวัติไม่สำเร็จ กรุณารีเฟรชอีกครั้ง'; return; }
+  const comparison = compareUatHistory(planSystems.flatMap(s => s.items), uatHistory.rows, now);
   if (!comparison) return;
   const { previous, changes, added, removed, machines, capturedAt } = comparison;
-  const todayItems = planSystems.flatMap(s => s.items);
   const percentage = items => items.length ? items.filter(x => x.status.toUpperCase() === 'PASS').length / items.length * 100 : 0;
-  const delta = percentage(todayItems) - percentage(previous);
   setText('comparisonYesterday', `${percentage(previous).toFixed(1)}%`);
-  setText('comparisonDelta', `${delta > 0 ? '+' : ''}${delta.toFixed(1)} จุด`);
   setText('comparisonStatus', `เปลี่ยนสถานะ ${changes.length} งาน · เพิ่ม ${added.length} · นำออก ${removed.length}`);
   if (detail) {
     detail.hidden = false;
-    detail.innerHTML = `<summary>การเปลี่ยนแปลงเทียบเมื่อวาน (${changes.length})</summary><p>เทียบข้อมูล ณ ${escapeHtml(new Date(capturedAt).toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' }))}</p><ul>${machines.map(m => `<li>${escapeHtml(m.name)}: PASS ${m.beforeDone}/${m.beforeTotal} → ${m.afterDone}/${m.afterTotal}</li>`).join('')}</ul><ul>${changes.map(x => `<li><b>${escapeHtml(x.code)}</b> · ${escapeHtml(x.machine)} · ${escapeHtml(x.title)}<br>${escapeHtml(x.before)} → ${escapeHtml(x.status)}</li>`).join('')}</ul>${!changes.length ? '<p>ไม่มีการเปลี่ยนสถานะในงานที่จับคู่ได้</p>' : ''}<p>เพิ่ม ${added.length} งาน · นำออก ${removed.length} งาน (ไม่นับเป็นการเปลี่ยนสถานะ)</p>`;
+    const passed = changes.filter(x => x.status.toUpperCase() === 'PASS').length;
+    const reopened = changes.filter(x => x.before.toUpperCase() === 'PASS').length;
+    const chip = value => `<span class="status-chip ${statusChipClass(value)}">${escapeHtml(value)}</span>`;
+    const scopeList = (label, items) => items.length ? `<h3>${label} (${items.length})</h3><ul>${items.map(x => `<li>${escapeHtml(x.code)} · ${escapeHtml(x.machine)} · ${escapeHtml(x.title)} ${chip(x.status)}</li>`).join('')}</ul>` : '';
+    detail.innerHTML = `<p class="comparison-time">เทียบข้อมูล ณ ${escapeHtml(new Date(capturedAt).toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' }))} กับข้อมูลที่โหลดล่าสุด</p><div class="comparison-summary"><span>ผ่านเพิ่ม <b>${passed}</b> งาน</span><span>จาก PASS เป็นสถานะอื่น <b>${reopened}</b> งาน</span><span>เปลี่ยนสถานะ <b>${changes.length}</b> งาน</span></div><h3>ความพร้อมรายเครื่อง</h3><div class="comparison-table-wrap"><table><thead><tr><th>เครื่อง</th><th>เมื่อวาน</th><th>วันนี้</th></tr></thead><tbody>${machines.map(m => {
+      const oldPercent = m.beforeTotal ? m.beforeDone / m.beforeTotal * 100 : null;
+      const newPercent = m.afterTotal ? m.afterDone / m.afterTotal * 100 : null;
+      return `<tr><th>${escapeHtml(m.name)}</th><td>${m.beforeDone}/${m.beforeTotal}<small>${oldPercent === null ? '—' : oldPercent.toFixed(1) + '%'}</small></td><td>${m.afterDone}/${m.afterTotal}<small>${newPercent === null ? '—' : newPercent.toFixed(1) + '%'}</small></td></tr>`;
+    }).join('')}</tbody></table></div><h3>รายการเปลี่ยนสถานะ (${changes.length})</h3><ul class="comparison-changes">${changes.map(x => `<li><div><b>${escapeHtml(x.code)}</b><small>${escapeHtml(x.machine)}</small><p>${escapeHtml(x.title)}</p><small>ผู้รับผิดชอบ: ${escapeHtml(x.owner || 'ยังไม่ระบุ')}</small></div><div class="comparison-transition">${chip(x.before)}<span aria-label="เปลี่ยนเป็น">→</span>${chip(x.status)}</div></li>`).join('')}</ul>${!changes.length ? '<p>ไม่มีการเปลี่ยนสถานะในงานที่จับคู่ได้</p>' : ''}${scopeList('งานเพิ่ม', added)}${scopeList('งานนำออก', removed)}`;
   }
 }
+
+const comparisonDialog = document.getElementById('comparisonDialog');
+document.getElementById('dailyComparison')?.addEventListener('click', () => comparisonDialog.showModal());
+document.getElementById('closeComparisonDialog')?.addEventListener('click', () => comparisonDialog.close());
+comparisonDialog?.addEventListener('click', event => {
+  const bounds = comparisonDialog.getBoundingClientRect();
+  if (event.target === comparisonDialog && (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom)) comparisonDialog.close();
+});
 
 function compareUatHistory(current, rows, now = new Date()) {
   const thaiDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Bangkok', year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);

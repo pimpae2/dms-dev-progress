@@ -65,14 +65,17 @@
           <article class="metric-card"><span class="metric-label">งานทั้งหมด</span><strong id="planTotal">—</strong><small id="planSystemCount">รายการที่มีสถานะ</small></article>
           <article class="metric-card is-done"><span class="metric-label">พัฒนาแล้ว</span><strong id="planDone">—</strong><small id="planDoneRatio">กำลังโหลดข้อมูล</small></article>
           <article class="metric-card is-problem"><span class="metric-label">ยังต้องติดตาม</span><strong id="planPending">—</strong><small id="planPendingRatio">กำลังโหลดข้อมูล</small></article>
-          <article class="metric-card is-comparison" id="dailyComparison" hidden>
+          <button type="button" class="metric-card is-comparison" id="dailyComparison" aria-haspopup="dialog" aria-controls="comparisonDialog" hidden>
             <span class="metric-label">วันนี้เทียบเมื่อวาน</span>
-            <div class="comparison-current"><strong id="comparisonToday">—</strong><span id="comparisonDelta">—</span></div>
-            <div class="comparison-baseline"><span>เมื่อวาน</span><b id="comparisonYesterday">—</b></div>
+            <div class="comparison-current"><span id="comparisonTodayDate">—</span><strong id="comparisonToday">—</strong></div>
+            <div class="comparison-baseline"><span id="comparisonYesterdayDate">—</span><b id="comparisonYesterday">—</b></div>
             <small id="comparisonStatus">ยังไม่มี Snapshot ของเมื่อวาน</small>
-          </article>
+          </button>
         </section>
-        <details id="dailyComparisonDetails" class="daily-comparison-details" hidden></details>
+        <dialog id="comparisonDialog" class="comparison-dialog" aria-labelledby="comparisonDialogTitle">
+          <header class="comparison-dialog-head"><h2 id="comparisonDialogTitle">วันนี้เทียบเมื่อวาน · เครื่อง UAT</h2><button type="button" id="closeComparisonDialog" aria-label="ปิดรายละเอียด" title="ปิดรายละเอียด">×</button></header>
+          <div id="dailyComparisonDetails" class="daily-comparison-details"></div>
+        </dialog>
         <section class="panel" aria-labelledby="planTitle">
           <div class="section-head"><div><p class="eyebrow">Project Progress</p><h2 id="planTitle">ภาพรวมความคืบหน้าโครงการ</h2></div><div class="legend"><span id="planDoneLegend"><i class="swatch done"></i>พัฒนาแล้ว</span><span id="planPendingLegend"><i class="swatch problem"></i>ยังต้องติดตาม</span></div></div>
           <p id="planMessage" role="status">กำลังอ่านข้อมูล</p>

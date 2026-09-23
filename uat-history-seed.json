@@ -1,0 +1,678 @@
+{
+  "revision": "578",
+  "capturedAt": "2026-09-22T15:19:19.391Z",
+  "rows": [
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-DK-I01",
+      "k8s-02-VM",
+      "Ubuntu OS และเครื่องมือพื้นฐาน",
+      "PASS"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-DK-I02",
+      "k8s-02-VM",
+      "containerd และชุดเครื่องมือ CRI",
+      "PASS"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-DK-I03",
+      "k8s-02-VM",
+      "Kubernetes Control Plane และ Node",
+      "PASS"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-DK-I04",
+      "k8s-02-VM",
+      "Calico CNI และ Operator",
+      "BLOCKED"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-DK-I05",
+      "k8s-02-VM",
+      "Helm และ NGINX Ingress Controller UAT",
+      "BLOCKED"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-MIO-02",
+      "k8s-02-VM",
+      "MinIO: ติดตั้งด้วย Helm/Operator บน Kubernetes",
+      "BLOCKED"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-DK-C01",
+      "k8s-02-VM",
+      "Host identity เวลา และ OS prerequisites",
+      "PASS"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-DK-C02",
+      "k8s-02-VM",
+      "Storage paths CRI/cgroup และลำดับเริ่มบริการ",
+      "PASS"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-DK-C03",
+      "k8s-02-VM",
+      "Cluster identity CIDR และ API/Kubelet security",
+      "PASS"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-DK-C04",
+      "k8s-02-VM",
+      "Calico และ Ingress isolation settings",
+      "PASS"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-DK-C05",
+      "k8s-02-VM",
+      "Namespace baseline และ Default ServiceAccount",
+      "PASS"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-DK-C06",
+      "k8s-02-VM",
+      "Host/CoreDNS บริการส่วนกลาง",
+      "PASS"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-DK-C07",
+      "k8s-02-VM",
+      "Public CA trust material",
+      "IN PROGRESS"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-DK-C08",
+      "k8s-02-VM",
+      "Client pull binding ของ Kubernetes",
+      "BLOCKED"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-DK-C09",
+      "k8s-02-VM",
+      "Deployment/Workload identity และ RBAC",
+      "BLOCKED"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-DK-C10",
+      "k8s-02-VM",
+      "Workload Resource Controls",
+      "BLOCKED"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-DK-C11",
+      "k8s-02-VM",
+      "Workload Security Context และ Admission",
+      "PASS"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-DK-C12",
+      "k8s-02-VM",
+      "App configuration Ingress/TLS และ Allowed Flows",
+      "BLOCKED"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-DK-C13",
+      "k8s-02-VM",
+      "Monitoring identity และ target ฝั่ง Kubernetes",
+      "BLOCKED"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-DK-C14",
+      "k8s-02-VM",
+      "Approved Audit Policy/Rules และ SIEM/Retention Configuration",
+      "FAIL"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-DK-C15",
+      "k8s-02-VM",
+      "Backup/Recovery configuration และ Runbook",
+      "FAIL"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-DK-C16",
+      "k8s-02-VM",
+      "As-Built เอกสารผลจริง และ Handoff",
+      "UNTESTED"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-DK-C17",
+      "k8s-02-VM",
+      "Persistent Storage/PVC แยก UAT",
+      "BLOCKED"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-MIO-01",
+      "k8s-02-VM",
+      "MinIO: เตรียม Helm/Operator และ PV/PVC แยก",
+      "BLOCKED"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-MIO-03",
+      "k8s-02-VM",
+      "MinIO: ตั้ง S3 Endpoint, DNS และ TLS",
+      "BLOCKED"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-MIO-04",
+      "k8s-02-VM",
+      "MinIO: ตั้ง Bucket, Secret และสิทธิ์",
+      "BLOCKED"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-URL-16",
+      "k8s-02-VM",
+      "slf-app: กำหนด Path/Ingress และ Base URL รายระบบย่อย",
+      "UNTESTED"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-ACT-SH-I01",
+      "shared-02-VM",
+      "Redis Cluster 7.0.15 สำหรับ DMS (3 masters)",
+      "UNTESTED"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-ACT-SH-I02",
+      "shared-02-VM",
+      "Redis Standalone แยกบริการสำหรับ DEV-equivalent workload",
+      "UNTESTED"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-ACT-SH-I03",
+      "shared-02-VM",
+      "Elasticsearch 9.5.3 แบบ isolated single-node",
+      "PASS"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-ACT-SH-I04",
+      "shared-02-VM",
+      "Kibana 9.5.3 แบบ isolated",
+      "PASS"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-PG-I01",
+      "shared-02-VM",
+      "PostgreSQL Server/Client 16.15",
+      "PASS"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-SH-I01",
+      "shared-02-VM",
+      "Ubuntu OS Base",
+      "PASS"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-SH-I02",
+      "shared-02-VM",
+      "Java 21 prerequisite",
+      "PASS"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-SH-I03",
+      "shared-02-VM",
+      "NGINX Shared Front Door",
+      "PASS"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-SH-I04",
+      "shared-02-VM",
+      "Keycloak 26.6.4",
+      "PASS"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-SH-I05",
+      "shared-02-VM",
+      "OpenLDAP 2.6.13",
+      "UNTESTED"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-SH-I06",
+      "shared-02-VM",
+      "Valkey 8.1.9",
+      "PASS"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-SH-I07",
+      "shared-02-VM",
+      "OpenSearch 3.7.0",
+      "PASS"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-SH-I08",
+      "shared-02-VM",
+      "OpenTelemetry Contrib 0.158.0",
+      "PASS"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-SH-I09",
+      "shared-02-VM",
+      "Prometheus 3.13.1",
+      "PASS"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-SH-I10",
+      "shared-02-VM",
+      "Grafana OSS 13.1.0",
+      "PASS"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-SH-I11",
+      "shared-02-VM",
+      "Alertmanager 0.32.1",
+      "PASS"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-SH-I12",
+      "shared-02-VM",
+      "Rundeck 6.0.1",
+      "UNTESTED"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-ACT-SH-C01",
+      "shared-02-VM",
+      "Redis Cluster ACL, resource limits และ persistence policy",
+      "UNTESTED"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-ACT-SH-C02",
+      "shared-02-VM",
+      "Redis Standalone TLS/ACL/AOF/Resource Limits",
+      "UNTESTED"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-ACT-SH-C03",
+      "shared-02-VM",
+      "Elasticsearch TLS, cluster identity, roles และ resource limits",
+      "PASS"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-ACT-SH-C04",
+      "shared-02-VM",
+      "Kibana Base Path, TLS, Spaces และ Developer access",
+      "UNTESTED"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-PG-C01",
+      "shared-02-VM",
+      "Cluster Bootstrap Paths และ Native Auto-start",
+      "BLOCKED"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-PG-C02",
+      "shared-02-VM",
+      "Keycloak/Rundeck Database และ Role Isolation",
+      "UNTESTED"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-PG-C03",
+      "shared-02-VM",
+      "External API AppDB Contract",
+      "UNTESTED"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-PG-C04",
+      "shared-02-VM",
+      "PostgreSQL Capacity และ Performance Configuration",
+      "UNTESTED"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-PG-C05",
+      "shared-02-VM",
+      "PostgreSQL Logging Monitoring SIEM และ Alert Binding",
+      "UNTESTED"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-PG-C06",
+      "shared-02-VM",
+      "PostgreSQL Backup/Recovery Configuration",
+      "UNTESTED"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-SH-C01",
+      "shared-02-VM",
+      "Service/Data Path Boot Ordering และ Permissions",
+      "FAIL"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-SH-C02",
+      "shared-02-VM",
+      "Canonical FQDN/TLS/Front Door Bootstrap",
+      "UNTESTED"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-SH-C03",
+      "shared-02-VM",
+      "Owner Binding ของ DNS/NTP/CA/File Repository",
+      "UNTESTED"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-SH-C04",
+      "shared-02-VM",
+      "Named Operator MFA Secrets และ Credential Lifecycle",
+      "UNTESTED"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-SH-C05",
+      "shared-02-VM",
+      "Keycloak Final Binding",
+      "UNTESTED"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-SH-C06",
+      "shared-02-VM",
+      "OpenLDAP Consumer DIT",
+      "UNTESTED"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-SH-C07",
+      "shared-02-VM",
+      "Valkey Consumer ACL Prefix TTL และ Quota",
+      "UNTESTED"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-SH-C08",
+      "shared-02-VM",
+      "OpenSearch Data Contract",
+      "UNTESTED"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-SH-C09",
+      "shared-02-VM",
+      "OpenTelemetry Final Pipeline",
+      "UNTESTED"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-SH-C10",
+      "shared-02-VM",
+      "Prometheus Central Receiver Configuration",
+      "UNTESTED"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-SH-C11",
+      "shared-02-VM",
+      "Grafana Final Provisioning",
+      "UNTESTED"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-SH-C12",
+      "shared-02-VM",
+      "Alertmanager Final Routing",
+      "UNTESTED"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-SH-C13",
+      "shared-02-VM",
+      "Rundeck Project Node Job-as-Code และ Key Storage",
+      "UNTESTED"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-SH-C14",
+      "shared-02-VM",
+      "SC01 Approved Audit/Security Policy",
+      "UNTESTED"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-SH-C15",
+      "shared-02-VM",
+      "Shared Capacity และ Placement",
+      "UNTESTED"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-SH-C16",
+      "shared-02-VM",
+      "Shared Product Backup/Recovery Plan",
+      "UNTESTED"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-SH-C17",
+      "shared-02-VM",
+      "As-Built Runbook และ Checker ตรง Runtime",
+      "UNTESTED"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-SH-C18",
+      "shared-02-VM",
+      "Lifecycle และ Security Dispositions",
+      "UNTESTED"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-SH-C19",
+      "shared-02-VM",
+      "Supporting Services Eligibility และข้อห้าม Provisioning",
+      "UNTESTED"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-URL-01",
+      "shared-02-VM",
+      "ยืนยันทะเบียน 3 FQDN และ Path จากระบบจริง",
+      "UNTESTED"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-URL-03",
+      "shared-02-VM",
+      "จัดทำ Change Plan, Backup และ Rollback ก่อนเปลี่ยน URL",
+      "UNTESTED"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-URL-04",
+      "shared-02-VM",
+      "ADMIN-PGE จัด DNS สำหรับ 3 ชื่อและยืนยันเส้นทางจริง",
+      "FAIL"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-URL-05",
+      "shared-02-VM",
+      "ออกและตรวจ Certificate ครอบคลุม 3 FQDN",
+      "FAIL"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-URL-06",
+      "shared-02-VM",
+      "กำหนด Nginx Routing สำหรับ 3 Host",
+      "FAIL"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-URL-07",
+      "shared-02-VM",
+      "ตรวจความปลอดภัยเมื่อหลายผลิตภัณฑ์ใช้ Origin เดียว",
+      "UNTESTED"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-URL-11",
+      "shared-02-VM",
+      "Keycloak: ตั้ง /keycloak/ และปรับ Issuer/Clients",
+      "UNTESTED"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-URL-12",
+      "shared-02-VM",
+      "Grafana: ตั้ง /grafana/ และตรวจ Dashboard/WebSocket",
+      "UNTESTED"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-URL-13",
+      "shared-02-VM",
+      "Prometheus: ตั้ง /prometheus/ และคง Scrape ที่ใช้งาน",
+      "UNTESTED"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-URL-14",
+      "shared-02-VM",
+      "Alertmanager: ตั้ง /alertmanager/ และตรวจการรับ Alert",
+      "UNTESTED"
+    ],
+    [
+      "2026-09-22T15:19:19.391Z",
+      "2026-09-22",
+      "UAT-URL-15",
+      "shared-02-VM",
+      "Rundeck: ตั้ง /rundeck/ และตรวจ Login/API",
+      "UNTESTED"
+    ]
+  ]
+}
