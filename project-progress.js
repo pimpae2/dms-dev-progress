@@ -5,6 +5,8 @@ let planRequest = 0;
 let dashboardFailedTabs = 0;
 const UAT_HISTORY_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR2abe7ebV8hlboWNdL7hsQe3DNEkgxd77Ok1s4Sn0vvWnFc_UnbiIhy2FFq1zrx-wBSgVdLwTG3-P8/pub?gid=0&single=true&output=csv";
 let uatHistory = { rows: [], error: false };
+const DEV_HISTORY_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSZu627RtZYImsTpzRI1jy0aIyl5pdZsP39weZzjZbP-AvlKcLsDwrPdYWPXNZ6YyijCi4cOztpjkpy/pub?gid=0&single=true&output=csv";
+let devHistory = { rows: [], error: false };
 let systemNavObserver = null;
 const PROJECT_WORKBOOK_ID = "1Hi1M7GNhA5G2p7BgiGLH3F5A3aKgO2A-iU46XGOvFC8";
 const DASHBOARD_PLAN = { id: "dashboard", displayName: "Dashboard", isDashboard: true };
@@ -186,18 +188,20 @@ async function refreshProjectPlan() {
       : await loadProjectPlan(activePlan.gid, activePlan.displayName);
     if (request !== planRequest) return;
     planSystems = systems;
-    if (activePlan.kind === "environment-uat") {
+    if (["environment-uat", "environment-dev"].includes(activePlan.kind)) {
+      const isUat = activePlan.kind === "environment-uat";
+      const historyUrl = isUat ? UAT_HISTORY_CSV_URL : DEV_HISTORY_CSV_URL;
       let history = { rows: [], error: false };
-      if (UAT_HISTORY_CSV_URL) {
+      if (historyUrl) {
         try {
-          const response = await fetch(UAT_HISTORY_CSV_URL, { cache: "no-store", credentials: "omit", signal: AbortSignal.timeout(15000) });
+          const response = await fetch(historyUrl, { cache: "no-store", credentials: "omit", signal: AbortSignal.timeout(15000) });
           if (!response.ok) throw new Error('History unavailable');
           const rows = parseCsv(await response.text());
           if (rows[0]?.[0] !== 'captured_at') throw new Error('Invalid history');
           history.rows = rows.slice(1);
         } catch { history.error = true; }
       }
-      if (!compareUatHistory(systems.flatMap(s => s.items), history.rows)) {
+      if (isUat && !compareUatHistory(systems.flatMap(s => s.items), history.rows)) {
         try {
           const response = await fetch('/uat-history-seed.json', { cache: 'no-store', signal: AbortSignal.timeout(10000) });
           if (!response.ok) throw new Error('History seed unavailable');
@@ -208,7 +212,8 @@ async function refreshProjectPlan() {
         } catch { /* Keep the live history state when the seed is unavailable. */ }
       }
       if (request !== planRequest) return;
-      uatHistory = history;
+      if (isUat) uatHistory = history;
+      else devHistory = history;
     }
     renderProjectPlan();
     document.body.classList.remove("is-loading-plan");
@@ -471,12 +476,15 @@ function planPercent() {
 function syncDailyComparison(percent) {
   const card = document.getElementById("dailyComparison");
   if (!card) return;
-  const show = activePlan?.kind === "environment-uat";
+  const show = ["environment-uat", "environment-dev"].includes(activePlan?.kind);
   card.hidden = !show;
   document.querySelector(".metrics")?.classList.toggle("has-comparison", show);
   const detail = document.getElementById('dailyComparisonDetails');
   if (detail) { detail.hidden = false; detail.innerHTML = '<p>ยังไม่มีข้อมูลเมื่อวานสำหรับเปรียบเทียบ</p>'; }
   if (!show) return;
+  const isUat = activePlan.kind === 'environment-uat';
+  const currentHistory = isUat ? uatHistory : devHistory;
+  setText('comparisonDialogTitle', `วันนี้เทียบเมื่อวาน · ${isUat ? 'เครื่อง UAT' : 'เครื่อง Dev'}`);
   const now = new Date();
   const thaiDay = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Bangkok', year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
   const previousDay = new Date(`${thaiDay}T00:00:00Z`);
@@ -487,8 +495,13 @@ function syncDailyComparison(percent) {
   setText("comparisonToday", `${percent}%`);
   setText("comparisonYesterday", "—");
   setText("comparisonStatus", "ยังไม่มีข้อมูลเมื่อวานสำหรับเปรียบเทียบ");
-  if (uatHistory.error) { setText('comparisonStatus', 'อ่านประวัติไม่สำเร็จ กรุณารีเฟรชอีกครั้ง'); if (detail) detail.textContent = 'อ่านประวัติไม่สำเร็จ กรุณารีเฟรชอีกครั้ง'; return; }
-  const comparison = compareUatHistory(planSystems.flatMap(s => s.items), uatHistory.rows, now);
+  if (!isUat && !DEV_HISTORY_CSV_URL) {
+    setText('comparisonStatus', 'ยังไม่ได้เชื่อมประวัติเครื่อง Dev');
+    if (detail) detail.textContent = 'ยังไม่ได้เชื่อมประวัติเครื่อง Dev กรุณาตั้งค่า DEV-History ก่อน ข้อมูล UAT จะไม่ถูกนำมาใช้แทน';
+    return;
+  }
+  if (currentHistory.error) { setText('comparisonStatus', 'อ่านประวัติไม่สำเร็จ กรุณารีเฟรชอีกครั้ง'); if (detail) detail.textContent = 'อ่านประวัติไม่สำเร็จ กรุณารีเฟรชอีกครั้ง'; return; }
+  const comparison = compareUatHistory(planSystems.flatMap(s => s.items), currentHistory.rows, now);
   if (!comparison) return;
   const { previous, changes, added, removed, machines, capturedAt } = comparison;
   const percentage = items => items.length ? items.filter(x => x.status.toUpperCase() === 'PASS').length / items.length * 100 : 0;
