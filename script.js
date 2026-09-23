@@ -4,7 +4,7 @@ const DOCUMENT_SHEET_GID = "345092171";
 const DONE_STATUSES = new Set(["Developed", "Tested", "Completed"]);
 const DOCUMENT_READY_STATUSES = new Set(["เซ็นหน้าจอแล้ว", "ส่งแล้ว"]);
 const DOCUMENT_EMPTY_STATUS = "ยังไม่ระบุ";
-const REFRESH_INTERVAL_MS = 60_000;
+const REFRESH_INTERVAL_MS = 5 * 60_000;
 
 const projectConfig = [
   { name: "DMS 8095", slug: "dms-8095", accent: "#0b6fb3" },
