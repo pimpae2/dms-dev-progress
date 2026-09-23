@@ -201,6 +201,7 @@ function parseProjectPlan(rows, fallbackName = activePlan?.displayName || "Proje
   rows = rows.map(row => row.map(cell => String(cell ?? "").trim()));
   const titleHeaders = ["คำอธิบาย", "หน้าจอ/เมนู/หัวข้อ", "รายการ", "ชื่องาน", "งาน", "task", "feature", "menu"];
   const statusHeaders = ["สถานะ", "สถานะงาน", "ผลการดำเนินงาน", "status"];
+  const noteHeaders = ["หมายเหตุ", "หมายเหตุ / งานต่อ", "หมายเหตุ/งานต่อ", "note", "remark", "remarks"];
   const matchesHeader = (cell, candidates) => {
     const value = String(cell || "").trim().toLocaleLowerCase("th");
     return candidates.some((header) => {
@@ -213,6 +214,7 @@ function parseProjectPlan(rows, fallbackName = activePlan?.displayName || "Proje
   const headers = rows[headerIndex];
   const titleIndex = headers.findIndex((cell) => matchesHeader(cell, titleHeaders));
   const statusIndex = headers.findIndex((cell) => matchesHeader(cell, statusHeaders));
+  const noteIndex = headers.findIndex((cell) => matchesHeader(cell, noteHeaders));
   const palette = ["#0b6fb3", "#168fbd", "#2d83c5", "#3e75c7", "#0b9abd"];
   const systems = [];
   let current = null;
@@ -225,6 +227,7 @@ function parseProjectPlan(rows, fallbackName = activePlan?.displayName || "Proje
       rawCode,
       title: String(row[titleIndex] || "").trim(),
       status: String(row[statusIndex] || "").trim(),
+      note: noteIndex >= 0 ? String(row[noteIndex] || "").trim() : "",
     };
   });
   const groupDepth = dataRows
@@ -257,7 +260,7 @@ function parseProjectPlan(rows, fallbackName = activePlan?.displayName || "Proje
       system = fallback;
       current = fallback;
     }
-    system.items.push({ code, title, status });
+    system.items.push({ code, title, status, note: record.note });
   }
   return systems.filter(system => system.items.length || system.textSection).map((system) => ({
     ...system,
@@ -690,7 +693,7 @@ function renderProjectPlan() {
     : planSystems.map((system) => {
     const counts = countBy(system.items, (item) => item.status);
     const chips = Object.entries(counts).map(([status, count]) => `<span class="status-chip ${statusChipClass(status)}">${escapeHtml(status)} <strong>${count}</strong></span>`).join("");
-    const items = system.items.map((item) => `<li class="${DONE_STATUSES.has(item.status) ? "is-done" : "needs-followup"}"><span class="plan-item-code">${escapeHtml(item.code)}</span><span>${escapeHtml(item.title)}</span><span class="status-chip ${statusChipClass(item.status)}">${escapeHtml(item.status)}</span></li>`).join("");
+    const items = system.items.map((item) => `<li class="${DONE_STATUSES.has(item.status) ? "is-done" : "needs-followup"}"><span class="plan-item-code">${escapeHtml(item.code)}</span><span class="plan-item-main"><span>${escapeHtml(item.title)}</span>${item.note ? `<small class="plan-item-note"><strong>หมายเหตุ:</strong> ${escapeHtml(item.note)}</small>` : ""}</span><span class="status-chip ${statusChipClass(item.status)}">${escapeHtml(item.status)}</span></li>`).join("");
     return `<article class="detail-card" id="${system.slug}" style="--accent:${system.accent}"><div class="detail-head"><div><p class="eyebrow">${system.code}</p><h3>${escapeHtml(system.name)}</h3><p>พัฒนาแล้ว ${system.done}/${system.total} ข้อ · ติดตาม ${system.total - system.done} ข้อ</p></div><div class="donut small-donut" style="--percent:${fmtPercent(system.done, system.total)};--accent:${system.accent}"><span>${fmtPercent(system.done, system.total)}%</span><small>พัฒนาแล้ว</small></div></div>${planBar(system)}<div class="status-list">${chips}</div><details class="plan-items" open><summary>รายการทั้งหมด ${system.total} ข้อ</summary><ul>${items}</ul></details></article>`;
   }).join("");
   renderSystemNavigation();

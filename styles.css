@@ -323,6 +323,16 @@ button {
 }
 
 .plan-item-code { color: var(--muted); font-variant-numeric: tabular-nums; }
+.plan-item-main { min-width: 0; }
+.plan-item-note {
+  display: block;
+  margin-top: 3px;
+  color: #526f87;
+  font-size: 0.9em;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+.plan-item-note strong { color: #245b80; }
 #planTabs button { white-space: normal; text-align: left; }
 @media (max-width: 560px) {
   .plan-items li { grid-template-columns: 52px minmax(0, 1fr); gap: 8px; }

@@ -123,6 +123,17 @@ test('parses AIM tabs with descriptive header suffixes', () => {
   assert.equal(Array.from(result, (system) => system.name).join('|'), 'จัดการหน้าจอระบบ|จัดการข้อความแจ้งเตือน|จัดการผู้ใช้งานและสิทธิ์ภายใน');
 });
 
+test('keeps notes from a dynamically located note column', () => {
+  const result = context.parseProjectPlanForTest([
+    ['', 'หน้าจอ/เมนู/หัวข้อ', 'สถานะ', 'URL', 'หมายเหตุ'],
+    ['1', 'Section', '', '', ''],
+    ['1.1', 'System Gateway', 'In Progress', 'https://example.test', 'รอทดสอบ API'],
+    ['1.2', 'Completed item', 'Completed', 'https://example.test/done', ''],
+  ], 'AIM');
+  assert.equal(result[0].items[0].note, 'รอทดสอบ API');
+  assert.equal(result[0].items[1].note, '');
+});
+
 test('keeps empty project tabs available without an error', () => {
   assert.equal(context.parseProjectPlanForTest([], 'EMPTY').length, 0);
   assert.equal(context.parseProjectPlanForTest([
