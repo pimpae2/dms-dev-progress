@@ -248,6 +248,7 @@ function parseProjectPlan(rows, fallbackName = activePlan?.displayName || "Proje
   const titleIndex = headers.findIndex((cell) => matchesHeader(cell, titleHeaders));
   const statusIndex = headers.findIndex((cell) => matchesHeader(cell, statusHeaders));
   const noteIndex = headers.findIndex((cell) => matchesHeader(cell, noteHeaders));
+  const urlIndex = headers.findIndex((cell) => matchesHeader(cell, ['url', 'link', 'ลิงก์', 'ลิงค์']));
   const palette = ["#0b6fb3", "#168fbd", "#2d83c5", "#3e75c7", "#0b9abd"];
   const systems = [];
   let current = null;
@@ -261,6 +262,7 @@ function parseProjectPlan(rows, fallbackName = activePlan?.displayName || "Proje
       title: String(row[titleIndex] || "").trim(),
       status: String(row[statusIndex] || "").trim(),
       note: noteIndex >= 0 ? String(row[noteIndex] || "").trim() : "",
+      url: urlIndex >= 0 ? safeTaskUrl(row[urlIndex]) : '',
     };
   });
   const groupDepth = dataRows
@@ -293,13 +295,29 @@ function parseProjectPlan(rows, fallbackName = activePlan?.displayName || "Proje
       system = fallback;
       current = fallback;
     }
-    system.items.push({ code, title, status, note: record.note });
+    system.items.push({ code, title, status, note: record.note, url: record.url });
   }
   return systems.filter(system => system.items.length || system.textSection).map((system) => ({
     ...system,
     total: system.items.length,
     done: system.items.filter((item) => DONE_STATUSES.has(item.status)).length,
   }));
+}
+
+function safeTaskUrl(value) {
+  const text = String(value || '').trim();
+  if (!/^https?:\/\//i.test(text)) return '';
+  try {
+    const url = new URL(text);
+    return url.hostname && !url.username && !url.password ? url.href : '';
+  } catch { return ''; }
+}
+
+function renderTaskTitle(item) {
+  const url = safeTaskUrl(item.url);
+  return url
+    ? `<a class="plan-task-link" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" title="เปิดหน้างานในแท็บใหม่">${escapeHtml(item.title)}</a>`
+    : `<span>${escapeHtml(item.title)}</span>`;
 }
 
 async function loadProjectPlan(gid, fallbackName = activePlan?.displayName || "Project") {
@@ -803,7 +821,7 @@ function renderProjectPlan() {
     : planSystems.map((system) => {
     const counts = countBy(system.items, (item) => item.status);
     const chips = Object.entries(counts).map(([status, count]) => `<span class="status-chip ${statusChipClass(status)}">${escapeHtml(status)} <strong>${count}</strong></span>`).join("");
-    const items = system.items.map((item) => `<li class="${DONE_STATUSES.has(item.status) ? "is-done" : "needs-followup"}"><span class="plan-item-code">${escapeHtml(item.code)}</span><span class="plan-item-main"><span>${escapeHtml(item.title)}</span>${item.note ? `<small class="plan-item-note"><strong>หมายเหตุ:</strong> ${escapeHtml(item.note)}</small>` : ""}</span><span class="status-chip ${statusChipClass(item.status)}">${escapeHtml(item.status)}</span></li>`).join("");
+    const items = system.items.map((item) => `<li class="${DONE_STATUSES.has(item.status) ? "is-done" : "needs-followup"}"><span class="plan-item-code">${escapeHtml(item.code)}</span><span class="plan-item-main">${renderTaskTitle(item)}${item.note ? `<small class="plan-item-note"><strong>หมายเหตุ:</strong> ${escapeHtml(item.note)}</small>` : ""}</span><span class="status-chip ${statusChipClass(item.status)}">${escapeHtml(item.status)}</span></li>`).join("");
     return `<article class="detail-card" id="${system.slug}" style="--accent:${system.accent}"><div class="detail-head"><div><p class="eyebrow">${system.code}</p><h3>${escapeHtml(system.name)}</h3><p>พัฒนาแล้ว ${system.done}/${system.total} ข้อ · ติดตาม ${system.total - system.done} ข้อ</p></div><div class="donut small-donut" style="--percent:${fmtPercent(system.done, system.total)};--accent:${system.accent}"><span>${fmtPercent(system.done, system.total)}%</span><small>พัฒนาแล้ว</small></div></div>${planBar(system)}<div class="status-list">${chips}</div><details class="plan-items" open><summary>รายการทั้งหมด ${system.total} ข้อ</summary><ul>${items}</ul></details></article>`;
   }).join("");
   renderSystemNavigation();

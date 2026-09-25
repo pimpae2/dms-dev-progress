@@ -8,8 +8,25 @@ const context = {
   DONE_STATUSES: new Set(['Developed', 'Tested', 'Completed']),
   document: { getElementById: () => null },
   console,
+  URL,
 };
 vm.runInNewContext(source, context);
+
+test('task URLs follow the URL header and allow only absolute web links', () => {
+  const result = context.parseProjectPlanForTest([
+    ['#', 'หน้าจอ/เมนู/หัวข้อ', 'สถานะ', 'หมายเหตุ', 'URL'],
+    ['1', 'Linked task', 'Completed', '', 'https://example.com/#/task'],
+    ['2', 'Missing link', 'In Progress', '', ''],
+    ['3', 'Relative link', 'In Progress', '', '#/task'],
+    ['4', 'Unsafe link', 'In Progress', '', 'javascript:alert(1)'],
+  ], 'DMS');
+  assert.equal(result[0].items[0].url, 'https://example.com/#/task');
+  assert.deepEqual(Array.from(result[0].items.slice(1), x => x.url), ['', '', '']);
+  assert.equal(result[0].total, 4);
+  assert.equal(context.safeTaskUrl('https://user:secret@example.com/'), '');
+  assert.equal(context.safeTaskUrl('https://'), '');
+  assert.equal(context.safeTaskUrl('http://example.com/page'), 'http://example.com/page');
+});
 
 test('real September 22 baseline contains 84 unique UAT tasks and 24 passes', async () => {
   const seed = JSON.parse(await readFile(new URL('../uat-history-seed.json', import.meta.url), 'utf8'));
